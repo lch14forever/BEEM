@@ -23,8 +23,8 @@ smooth.deri.glkerns <- function(x, t, deriv=0, t.out=t, smethod='glkerns', ...){
     res <- abs(x - fit.tmp)
     res.med <- median(res)
     res.mad <- mad(res)
-    outliers <- abs(res - res.med) / (res.mad+1e-16) > 5
-    outliers[c(1:4,length(outliers))] <- FALSE
+    outliers <- (res - res.med) / (res.mad+1e-16) > 5
+    outliers[c(1:3,length(outliers))] <- FALSE
     if(smethod=='glkerns'){
         glkerns(t[!outliers], x[!outliers], deriv=deriv, x.out = t.out,...)$est
     }else{
@@ -47,7 +47,7 @@ smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...
     res <- abs(x - fit.tmp)
     res.med <- median(res)
     res.mad <- mad(res)
-    outliers <- abs(res - res.med) / (res.mad+1e-16) > 5
+    outliers <- (res - res.med) / (res.mad+1e-16) > 5
     outliers[c(1:3,length(outliers))] <- FALSE    
     c(predict(smooth.Pspline(t[!outliers], x[!outliers],method=smethod, norder=norder, ...), t.out, deriv ) )
 }
@@ -126,11 +126,13 @@ tsoutliers <- function(x,t,dev=2){
     score <- rep(Inf, length(x))
     x <- x[!NAs]
     t <- t[!NAs]
-    resid <- residuals(loess(x ~ t))
-    resid.med <- median(resid)
-    resid.mad <- mad(resid)
-    limits <- resid.med+resid.mad * dev* c(-1,1)
-    score[!NAs] <- abs(pmin((resid-limits[1]),0) + pmax((resid - limits[2]),0))
+    resid <- abs(residuals(loess(x ~ t)))
+    score[!NAs] <- (resid - median(resid))>mad(resid) * dev
+    
+    ## resid.med <- median(resid)
+    ## resid.mad <- mad(resid)
+    ## limits <- resid.med+resid.mad * dev* c(-1,1)
+    ## score[!NAs] <- abs(pmin((resid-limits[1]),0) + pmax((resid - limits[2]),0))
     return(score)
 }
 
@@ -187,7 +189,7 @@ formatOutput <- function(alpha, beta, gamma=NULL, vnames){
 #' @param vnames the name of species to format output
 #' @param seed the seed
 #' @return a list with alpha, beta, and output in MDSINE's format
-BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=0){
+BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
     suppressMessages(library(monomvn))
     registerDoMC(ncpu)    
     p <- ncol(X)
@@ -198,7 +200,7 @@ BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=0){
     theta <- foreach(o = 1:tmp, .combine=cbind) %dopar% {
         Y <- Ys[, o]
         f <- Fs[, o]
-	    set.seed(seed)	
+        if(!is.null(seed)) set.seed(seed)	
         if(is.null(P)){
             bl.fit <- blasso(X[!f,], Y[!f], verb = 0, T=1500)
         }else{
@@ -566,13 +568,13 @@ testStop <- function(x, epsilon=0.1){
 #' @param min_iter minimal number of iterations for the EM algorithm (default: 30)
 #' @param epsilon tolerance threshold to early stop the iterations (default: 0.01)
 #' @param ncpu maximal number of CPUs used (default:10)
-#' @param seed seed used in BLASSO (default:0)
+#' @param seed seed used in BLASSO (default:NULL)
 #' @param scaling median total biomass to scale all biomass data (default:1000)
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                dev=Inf, verbose=TRUE,
                refSp = sample(nrow(dat),1),
                min_iter = 30,  max_iter = 100, epsilon=0.01,
-               ncpu=10, seed=0, scaling=1000){
+               ncpu=10, seed=NULL, scaling=1000){
     
     p <- nrow(dat)
     dat.tss <- apply(dat, 2, function(x)x/sum(x, na.rm = TRUE))
