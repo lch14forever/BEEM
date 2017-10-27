@@ -672,14 +672,6 @@ param.infer <- function(dat, metadata, biomass,
         SmoothGradient(log.transform(counts.tss)[sel, ], metadata[sel, 4],
                        breaks=brk,method='pspline',smethod=3, deriv=1, ncpu=ncpu)
     }    
-    ## smooth relative abundances
-    lnx_tilde <- foreach(i=unique(metadata$subjectID), .combine='rbind') %do%{
-        sel <- metadata$subjectID == i
-        brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
-                             which(forceBreak[sel] == 1))))            
-        SmoothGradient(log.transform(counts.tss)[sel, ], metadata[sel, 4],
-                       breaks=brk,method='pspline',smethod=3, deriv=0, ncpu=ncpu)
-    }
     ## smooth to calculate gradient for log biomass
     dlnm_dt <- foreach(i=unique(metadata$subjectID), .combine='c') %do%{
         sel <- metadata$subjectID == i
@@ -688,16 +680,8 @@ param.infer <- function(dat, metadata, biomass,
         SmoothGradient(matrix(log.transform(biomass)[sel],ncol=1), metadata[sel, 4],
                        breaks=brk,method='pspline',smethod=3, deriv=1, ncpu=ncpu)
     }
-    ## smooth biomass    
-    lnm <- foreach(i=unique(metadata$subjectID), .combine='c') %do%{
-        sel <- metadata$subjectID == i
-        brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
-                             which(forceBreak[sel] == 1))))            
-        SmoothGradient(matrix(log.transform(biomass)[sel],ncol=1), metadata[sel, 4],
-                       breaks=brk,method='pspline',smethod=3, deriv=0, ncpu=ncpu)
-    }
     Ys <- dlnx_tilde_dt + dlnm_dt   
-    Xs <- exp(sweep(lnx_tilde, 1, lnm, '+'))
+    Xs <- exp(sweep(log.transform(counts.tss), 1, log.transform(biomass), '+'))
     if(infer_flag == FALSE) return(list(Ys=Ys, Xs=Xs))
     ## detect outliers
     isOutlier <- foreach(i=unique(metadata$subjectID), .combine='rbind') %dopar%{
@@ -737,7 +721,6 @@ paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10){
     beem.a <- beem.param[1:p]
     beem.b <- matrix(beem.param[-(1:p)],p,p)    
     beem.b.median <- apply(beem.b[-refSp,],2,median)
-    ## beem.b.mad <- apply(beem.b[-refSp,],2,mad)
     beem.beta <- t(t(beem.b) - beem.b.median)
 
     ## significance
@@ -749,21 +732,15 @@ paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10){
                        forceBreak=forceBreak, ncpu=ncpu, infer_flag=FALSE)    
     Xs <- tmp$Xs
     Ys <- tmp$Ys
-    tmp.alpha.ref <- median(Ys[,refSp] - (beem.beta %*% t(Xs))[refSp,])
-        
-    beem.alpha <- beem.a + tmp.alpha.ref
-
-    ## try to fix negative growth rate
-    neg.idx <- which(beem.alpha<0)    
-    beem.alpha[neg.idx] <- foreach(idx=neg.idx, .combine =c) %dopar%{
+    beem.alpha <- foreach(idx=1:p, .combine =c) %dopar%{
         tmp <- (Ys[,idx] - (beem.beta %*% t(Xs))[idx,])
         median(tmp[tmp>0])
     }
-    
-    if(is.na(tmp.alpha.ref) || any(beem.alpha<0) || any(is.na(beem.alpha))) {
+
+    if(any(beem.alpha<0) || any(is.na(beem.alpha))) {
         message("Warning: Negative growth rates observed. Consider change reference species.")
     }
-    
+
     beem.MDSINE <- beem.obj$final.params
     beem.MDSINE$value <- c(beem.alpha, c(beem.beta))
     beem.MDSINE$significance <- c(rep(10000,p), c(beem.sig))
