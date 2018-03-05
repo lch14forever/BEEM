@@ -695,6 +695,15 @@ param.infer <- function(dat, metadata, biomass,
     BLASSO(X=Xs, P=NULL, Ys=Ys, Fs=isOutlier, ncpu=ncpu, rmSp=0, vnames=rownames(dat))
 }
 
+#' Inferring biomass from BEEM results
+#' @param beem.obj BEEM output list
+biomassFromEM <- function(beem.obj){
+    trace.mse <- res$trace.mse
+    min.mse <- min(trace.mse)
+    em.idx <- which((trace.mse-min.mse) < res$epsilon*min.mse)
+    biomass <- apply(res$trace.biomass[,em.idx],1,median)
+    biomass
+}
 
 #' Inferring parameters from BEEM results
 #' @param beem.obj BEEM output list
