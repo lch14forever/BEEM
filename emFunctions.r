@@ -367,6 +367,7 @@ BMAcoeff.new <- function (x, ncpu, n.sim = 5000, method = "svd", best=FALSE) {
 #' @param m matrix of data (variables in columns, measurements in rows)
 #' @param p quantile used for normalization (default: 0.5)
 cumSumScale <- function(m, p=0.5){
+    m[m==0] <- NA
     ## find the quantile in each sample
     quant <- apply(m,1,function(x) quantile(x, p=p, na.rm = TRUE))
     ## calculate normalization factor
