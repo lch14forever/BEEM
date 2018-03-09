@@ -11,7 +11,7 @@ BEEM was written in R (>3.3.1) and requires the following packages:
  - monomvn
 
 BEEM scripts can be loaded with the following command in R:
-```{R}
+```r
 source('path/to/this/repo/emFunctions.r')
 ```
 ## Input data
@@ -51,7 +51,7 @@ We provided several sample input files that were also analyzed in our manuscript
 
 ### Basic Usage (R commands)
 
-```{R}
+```r
 ## Load functions
 source("emFunctions.r")
 ## Read inputs
