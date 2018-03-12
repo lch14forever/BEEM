@@ -1,7 +1,9 @@
 # BEEM
-BEEM stands for *B*iomass *E*stimation and model inference with an *E*xpectation *M*aximization like algorithm. BEEM implemented an iterative EM-like algorithm to solve the total biomass (microbiome load) from high-throughput environmental sequencing data (16S targeted or shotgun-metagenomics) based on the generalized Lotka-Volterra Model (gLVM). BEEM also provided algorithms to estimate gLVM parameters (microbial growth rates and pair-wise interactions).
+BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used generalized Lotka-Volterra modelling (gLVM) framework (cite). BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing. 
 
-## Denpendencies
+Note: BEEM stands for *B*iomass *E*stimation and model inference with an *E*xpectation *M*aximization-like algorithm. 
+
+## Dependencies
 
 BEEM was written in R (>3.3.1) and requires the following packages: 
  - foreach
