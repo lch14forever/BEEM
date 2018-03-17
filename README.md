@@ -1,5 +1,5 @@
 # BEEM
-BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used generalized Lotka-Volterra modelling (gLVM) framework (cite). BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing. 
+BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used [generalized Lotka-Volterra modelling](https://en.wikipedia.org/wiki/Generalized_Lotka–Volterra_equation) (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing. A preprint describing this work will be posted on bioRxiv soon.
 
 Note: BEEM stands for *B*iomass *E*stimation and model inference with an *E*xpectation *M*aximization-like algorithm. 
 
@@ -18,26 +18,26 @@ source('path/to/this/repo/emFunctions.r')
 ```
 ## Input data
 
-The input files for BEEM should have the same format described in the manual of [MDSINE](https://bitbucket.org/MDSINE/mdsine/). The following two files are required by BEEM:
+The input files for BEEM should have the same format as described in the manual for [MDSINE](https://bitbucket.org/MDSINE/mdsine/). The following two files are required by BEEM:
 
 ### OTU table
 
-This should be an abundance table file (tab-delimited text file), whose first row has the sample IDs and the and first column has the OTU IDs (or taxonomic annotations). Each row is the abundance of one OTU across all samples and each column contains the abundances of all OTUs in that sample. 
+This should be a tab-delimited text file whose first row has the sample IDs and the first column has the OTU IDs (or taxonomic annotations). Each row should then contain the relative abundance of one OTU across all samples and each column should contain the relative abundances of all OTUs in that sample. 
 
 ### Metadata
 
-The metadata should be a table (tab-delimited text file) with the following columns:
+The metadata file should be a tab-delimited text file with the following columns:
 ```
 sampleID    isIncluded    subjectID    measurementID
 ```
- - `sampleID`: the sample IDs matching the first row of the OTU table
- - `isIncluded`: wether the sample should be included in the analysis (1-include, 0-exclude)
+ - `sampleID`: sample IDs matching the first row of the OTU table
+ - `isIncluded`: whether the sample should be included in the analysis (1-include, 0-exclude)
  - `subjectID`: indicator for which biological replicate the sample belongs to
- - `measurementID`: time stamp for the sample
+ - `measurementID`: timepoint for the sample
 
 ### Sample data
 
-We provided several sample input files that were also analyzed in our manuscript.
+We have provided several sample input files that were also analyzed in our manuscript.
 
 #### Data from [Props et. al. (2016)](https://www.nature.com/articles/ismej2016117)
 
@@ -73,11 +73,11 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
  
  - `parameter_type`: `growth_rate` or `interaction`
  - `source_taxon`: source taxon for interaction (`NA` if `parameter_type` is `growth_rate`)
- - `target_taxon`: target taxon for interaction 
+ - `target_taxon`: target taxon for interaction or growth rate
  - `value`: parmater value 
  - `significance`: confidence level of the inferred interaction (only meaningful for interactions)
  
 ### Analyses in the manuscript
 
-The commands for reproducing the analysis in the manuscript were presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/isme.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/time_series_meta.ipynb).
+The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/isme.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/time_series_meta.ipynb).
  
