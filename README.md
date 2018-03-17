@@ -74,7 +74,7 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
  - `parameter_type`: `growth_rate` or `interaction`
  - `source_taxon`: source taxon for interaction (`NA` if `parameter_type` is `growth_rate`)
  - `target_taxon`: target taxon for interaction or growth rate
- - `value`: parmater value 
+ - `value`: parameter value 
  - `significance`: confidence level of the inferred interaction (only meaningful for interactions)
  
 ### Analyses in the manuscript
