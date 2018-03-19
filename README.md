@@ -81,8 +81,8 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
 
 The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/isme.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/time_series_meta.ipynb).
 
-### Citation
+## Citation
 C Li, L Tucker-Kellogg & N Nagarajan. (2018). System	Biology	Modeling	with Compositional Microbiome	Data	Reveals Personalized	Gut	Microbial	Dynamics	and	Keystone	Species. *Submitted*.
 
-### Contact
+## Contact
 Please direct any questions or feedback to Chenhao Li (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
