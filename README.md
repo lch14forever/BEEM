@@ -85,4 +85,4 @@ The commands for reproducing the analysis reportd in the manuscript are presente
 C Li, L Tucker-Kellogg & N Nagarajan. (2018). System	Biology	Modeling	with Compositional Microbiome	Data	Reveals Personalized	Gut	Microbial	Dynamics	and	Keystone	Species. *Submitted*.
 
 ### Contact
-Please direct any questions or feedback to Chayaporn Suphavilai (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
+Please direct any questions or feedback to Chenhao Li (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
