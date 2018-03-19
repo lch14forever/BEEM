@@ -1,7 +1,7 @@
 # BEEM
 BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used [generalized Lotka-Volterra modelling](https://en.wikipedia.org/wiki/Generalized_Lotka–Volterra_equation) (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing. A preprint describing this work will be posted on bioRxiv soon.
 
-Note: BEEM stands for *B*iomass *E*stimation and model inference with an *E*xpectation *M*aximization-like algorithm. 
+Note: BEEM stands for **B**iomass **E**stimation and model inference with an **E**xpectation **M**aximization-like algorithm. 
 
 ## Dependencies
 
@@ -80,4 +80,9 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
 ### Analyses in the manuscript
 
 The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/isme.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/time_series_meta.ipynb).
- 
+
+### Citation
+C Li, L Tucker-Kellogg & N Nagarajan. (2018) System	Biology	Modeling	with Compositional Microbiome	Data	Reveals Personalized	Gut	Microbial	Dynamics	and	Keystone	Species. *Submitted*
+
+### Contact
+Please direct any questions or feedback to Chayaporn Suphavilai (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
