@@ -33,7 +33,7 @@ sampleID    isIncluded    subjectID    measurementID
  - `sampleID`: sample IDs matching the first row of the OTU table
  - `isIncluded`: whether the sample should be included in the analysis (1-include, 0-exclude)
  - `subjectID`: indicator for which biological replicate the sample belongs to
- - `measurementID`: timepoint for the sample
+ - `measurementID`: time in standardized units from the start of the experiment
 
 ### Sample data
 
