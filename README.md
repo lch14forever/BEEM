@@ -55,7 +55,7 @@ We have provided several sample input files that were also analyzed in our manus
 
 ```r
 ## Load functions
-source("emFunctions.r")
+source('path/to/this/repo/emFunctions.r')
 ## Read inputs
 counts <- read.table('counts.txt', head=F, row.names=1)
 metadata <- read.table('metadata.txt', head=T)

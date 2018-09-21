@@ -48,7 +48,8 @@ smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...
     res.med <- median(res)
     res.mad <- mad(res)
     outliers <- (res - res.med) / (res.mad+1e-16) > 5
-    outliers[c(1:3,length(outliers))] <- FALSE    
+    outliers[c(1:3,length(outliers))] <- FALSE
+    if (2*norder + 1 >= length(t[!outliers])){outliers[1:length(outliers)] <- FALSE}
     c(predict(smooth.Pspline(t[!outliers], x[!outliers],method=smethod, norder=norder, ...), t.out, deriv ) )
 }
 
@@ -202,9 +203,9 @@ BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
         f <- Fs[, o]
         if(!is.null(seed)) set.seed(seed)	
         if(is.null(P)){
-            bl.fit <- blasso(X[!f,], Y[!f], verb = 0, T=1500)
+            bl.fit <- blasso(X[!f & !is.na(Y),], Y[!f & !is.na(Y)], verb = 0, T=1500)
         }else{
-            bl.fit <- blasso(cbind(P[!f,],X[!f,]), Y[!f], verb = 0, T=1500)
+            bl.fit <- blasso(cbind(P[!f & !is.na(Y),],X[!f & !is.na(Y),]), Y[!f & !is.na(Y)], verb = 0, T=1500)
         }
         a <- mean(bl.fit$mu[-(1:500)])
         b <- apply(bl.fit$beta[-c(1:500),],2,mean)
@@ -237,7 +238,8 @@ BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
             gamma.m <- postProcessGamma(alpha.v, gamma.m)
         }
     }    
-    beta.m <- postProcessBeta(beta.m)    
+    beta.m <- postProcessBeta(beta.m)
+
     return(list(alpha.v=alpha.v, beta.m=beta.m, gamma.m=gamma.m,
                 mdsine=formatOutput(alpha.v, beta.m, gamma.m, vnames)))
 }
@@ -435,12 +437,21 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
         }
         dalr_x_dt <- cbind(dalr_x_dt, dalr_x_dt.tmp)
         ## detect outliers
-        outliers.tmp <- t(apply(dalr_x_dt.tmp, 1, function(x)
-                               tsoutliers.w.brks(x,metadata[sel,4],brk,dev=dev) > 0))
+        if (!finite_diff){
+            outliers.tmp <- t(apply(dalr_x_dt.tmp, 1, function(x)
+                tsoutliers.w.brks(x,metadata[sel,4],brk,dev=dev) > 0))
+        }else{
+            outliers.tmp <- matrix(FALSE, nrow(dalr_x_dt.tmp), ncol(dalr_x_dt.tmp))
+        }
         isOutlier <- cbind(isOutlier, outliers.tmp)
         ## scaling
         dat.tmp.norm <- dat.tmp.norm * scaling ##* sf[subj.id==i]
         dat.norm.scale <- cbind(dat.norm.scale, dat.tmp.norm)
+    }
+    if(finite_diff){
+        ## detect outliers for all gradients
+        isOutlier <- t(apply(dalr_x_dt,1, function(x)
+            abs(x-median(x, na.rm = TRUE))/mad(x, na.rm = TRUE) > dev ))
     }
     list(normData=dat.norm.scale, perturbInd=mu, alrGradient=dalr_x_dt, isOutlier=isOutlier)    
 }
@@ -514,20 +525,23 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, sc
         if(all(outliers)) outliers <- wrong.sign
         if(all(wrong.sign)) {
             w.tmp <- scale
-            mse <- NA
+            warning(paste0("Sample @", t,' has a negative biomass estimation!'))
         }else{
             ## OLS
             model <- lm(Y[!outliers]~X[!outliers]-1)
             w.tmp <- abs(model$coeff[1])
-            mse <- mean((X*w.tmp-Y)^2)
         }
+        mse <- (X*w.tmp-Y)^2 
         names(w.tmp) <- NULL
         list(w.tmp, mse)
     }
 
+    mse.mat <- (matrix(unlist((w.list[[2]])), p-1)) ##* apply(abs(Xs),2,function(x)x/sum(x))
     w <- unlist(w.list[[1]])
-    mse <- mean((unlist(w.list[[2]])), na.rm = TRUE)
-       
+
+    mse <- mean(c(mse.mat), na.rm = TRUE)
+    mse.weighted <- mean(apply(mse.mat,2,mean)*1/w, na.rm = TRUE)
+
     if(smooth){
         w <- foreach(i=unique(metadata$subjectID), .combine="c") %dopar%{
             sel <- metadata$subjectID==i
@@ -542,7 +556,7 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, sc
         w <- w/median(w) * scale
     }
     normCounts <- t(sweep(tss, 2, w, '*'))
-    list(biomass=w, normCounts=normCounts, mse=mse)
+    list(biomass=w, normCounts=normCounts, mse=mse, mse.weighted=mse.weighted)
 }
 
 #' Function to determine whether to stop the EM
@@ -550,7 +564,7 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, sc
 #' @param epsilon tolerance of mse
 #' @return a boolean value about the termination
 testStop <- function(x, epsilon=0.1){
-    ###if(which.min(x)==length(x)) {return(FALSE)} ## MSE is still decreasing
+    ## if(which.min(x)==length(x)) {return(FALSE)} ## MSE is still decreasing
     min_mse <- min(x)
     if(x[length(x)]-min_mse> min_mse * epsilon){return(TRUE)}    
     return(FALSE)
@@ -584,7 +598,8 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
     gradients.T <- tmpPreProcessed$alrGradient
     gradients <- t(gradients.T)
     perturbInd <- tmpPreProcessed$perturbInd
-    isOutlier <- t(tmpPreProcessed$isOutlier)    
+    isOutlier <- t(tmpPreProcessed$isOutlier)
+    ##print(sum(c(isOutlier), na.rm = TRUE))
     ## if we know the species abundance should be 0, we force them to be outliers
     isOutlier[t(is.na(dat))[,-refSp]] <- TRUE
     
@@ -593,6 +608,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
     dat.iter <- t(tmpPreProcessed$normData)
     biomass.traj <- data.frame("0"=rowSums(dat.iter))
     mse.traj <- c(Inf)
+    mse.weighted.traj <- c(Inf)
 
     parm.traj <- apply(expand.grid(SpNames, SpNames), 1,
                        function(x) paste0(x[2], '->', x[1]))
@@ -617,7 +633,6 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         beta.m <- parms$beta.m
         gamma.m <- parms$gamma.m
         mdsine <- parms$mdsine
-        
         tmp <- mdsine$value
         parm.traj <- cbind(parm.traj, tmp)
 
@@ -625,9 +640,10 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         if(iter > min_iter && testStop(mse.traj, epsilon)) break
         if(verbose) message( "####normalize (M step)####")
         
-        tmp <- NORM(dat.tss, gradients.T, t(perturbInd), meta, refSp, list(alpha=alpha.v, beta=beta.m, gamma=gamma.m), ncpu=ncpu, scale=scaling, smooth=TRUE, forceBreak = forceBreak)
+        tmp <- NORM(dat.tss, gradients.T, t(perturbInd), meta, refSp, list(alpha=alpha.v, beta=beta.m, gamma=gamma.m), ncpu=ncpu, scale=scaling, smooth=useSpline, forceBreak = forceBreak)
         biomass.traj <- cbind(biomass.traj, tmp$biomass)
         mse.traj <- c(mse.traj, tmp$mse)
+        mse.weighted.traj <- c(mse.weighted.traj, tmp$mse.weighted)
         normCounts <- tmp$normCounts
         print(tmp$mse)
         dat.iter <- normCounts
@@ -640,6 +656,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         trace.biomass=biomass.traj,
         trace.params=parm.traj,
         trace.mse=mse.traj,
+        trace.mse.weighted=mse.weighted.traj,
         min.iter=min_iter,
         max.iter=max_iter,
         epsilon=epsilon,
@@ -664,6 +681,7 @@ param.infer <- function(dat, metadata, biomass,
         tmp[!is.finite(tmp)] <- 0
         tmp
     }
+    dat[is.na(dat)] <- 0
     counts.tss <- t(apply(dat, 2, function(x)x/sum(x)))
     ## smooth to calculate gradient for log relative abundances
     dlnx_tilde_dt <- foreach(i=unique(metadata$subjectID), .combine='rbind') %do%{
@@ -698,10 +716,10 @@ param.infer <- function(dat, metadata, biomass,
 #' Inferring biomass from BEEM results
 #' @param beem.obj BEEM output list
 biomassFromEM <- function(beem.obj){
-    trace.mse <- res$trace.mse
+    trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
-    em.idx <- which((trace.mse-min.mse) < res$epsilon*min.mse)
-    biomass <- apply(res$trace.biomass[,em.idx],1,median)
+    em.idx <- which((trace.mse-min.mse) < beem.obj$epsilon*min.mse)
+    biomass <- apply(beem.obj$trace.biomass[,em.idx],1,median)
     biomass
 }
 
@@ -711,7 +729,8 @@ biomassFromEM <- function(beem.obj){
 #' @param metadata metadata following MDSINE's metadata format
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param ncpu maximal number of CPUs used (default:10)
-paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10){
+#' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
+paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10, enforceLogistic=FALSE){
     registerDoMC(ncpu)
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
@@ -744,16 +763,30 @@ paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10){
     Ys <- tmp$Ys
     beem.alpha <- foreach(idx=1:p, .combine =c) %dopar%{
         tmp <- (Ys[,idx] - (beem.beta %*% t(Xs))[idx,])
+        ## tmp <- tmp[(tmp-median(tmp)) <= 2*IQR(tmp)]
         median(tmp[tmp>0])
     }
-
     if(any(beem.alpha<0) || any(is.na(beem.alpha))) {
-        message("Warning: Negative growth rates observed. Consider change reference species.")
+        message("Warning: Not enough time points to enforce positive growth rate.")
+    }
+    ## fix self interaction
+    if (enforceLogistic){
+        beem.diag <- foreach(idx=1:p, .combine =c) %dopar%{
+            beem.tmp <- beem.beta
+            diag(beem.tmp) <- 0
+            tmp <- (Ys[,idx] - (beem.tmp %*% t(Xs))[idx,] - beem.alpha[idx])/Xs[,idx]
+            tmp <- tmp[(tmp-median(tmp)) <= 2*IQR(tmp)]
+            median(tmp[tmp<0])
+        }
+        diag(beem.beta) <- beem.diag
     }
 
     beem.MDSINE <- beem.obj$final.params
     beem.MDSINE$value <- c(beem.alpha, c(beem.beta))
     beem.MDSINE$significance <- c(rep(10000,p), c(beem.sig))
+    if (enforceLogistic){
+        beem.MDSINE$significance[beem.MDSINE$parameter_type=='interaction' & beem.MDSINE$source_taxon == beem.MDSINE$target_taxon ] <- rep(10000,p)
+    }
     beem.MDSINE
 }
 
