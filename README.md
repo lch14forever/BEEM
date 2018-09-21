@@ -33,7 +33,7 @@ sampleID    isIncluded    subjectID    measurementID
  - `sampleID`: sample IDs matching the first row of the OTU table
  - `isIncluded`: whether the sample should be included in the analysis (1-include, 0-exclude)
  - `subjectID`: indicator for which biological replicate the sample belongs to
- - `measurementID`: timepoint for the sample
+ - `measurementID`: time in standardized units from the start of the experiment
 
 ### Sample data
 
@@ -82,7 +82,7 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
 The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/isme.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/time_series_meta.ipynb).
 
 ## Citation
-C Li, L Tucker-Kellogg & N Nagarajan. (2018). System	Biology	Modeling	with Compositional Microbiome	Data	Reveals Personalized	Gut	Microbial	Dynamics	and	Keystone	Species. *Submitted*.
+C Li, L Tucker-Kellogg & N Nagarajan. (2018). System	Biology	Modeling	with Compositional Microbiome	Data	Reveals Personalized	Gut	Microbial	Dynamics	and	Keystone	Species. [*BioRxiv*](https://www.biorxiv.org/content/early/2018/03/27/288803).
 
 ## Contact
 Please direct any questions or feedback to Chenhao Li (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
