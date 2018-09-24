@@ -570,6 +570,15 @@ testStop <- function(x, epsilon=0.1){
     return(FALSE)
 }
 
+#' Function to order the references for ALR
+#' @param dat input data in relative abundances
+rankRefs <- function(dat, meta){
+    cv <- foreach(s=unique(meta$subjectID), .combine=rbind) %do% {
+        apply(dat[, meta$subjectID==s], 1, function(x) sd(x)/mean(x))
+    }
+    tmp <- apply(cv, 2, mean)
+    data.frame(cv=tmp, index=rank(tmp), hasZero=rowSums(dat==0) != 0)[order(tmp),]
+}
 
 #' Function to estimate biomass and parameters simultaneously
 #' @param dat input data following MDSINE's OTU table (i.e. variables in rows and samples in columns)
@@ -578,7 +587,7 @@ testStop <- function(x, epsilon=0.1){
 #' @param useSpline use spline to smooth data and calculate gradients (default: TRUE)
 #' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
 #' @param verbose print more information (default: TRUE)
-#' @param refSp reference OTU for addative log ratio transformation (default: random)
+#' @param refSp reference OTU for addative log ratio transformation (default: selected by BEEM)
 #' @param max_iter maximal number of iterations for the EM algorithm (default: 100)
 #' @param min_iter minimal number of iterations for the EM algorithm (default: 30)
 #' @param epsilon tolerance threshold to early stop the iterations (default: 0.01)
@@ -587,9 +596,19 @@ testStop <- function(x, epsilon=0.1){
 #' @param scaling median total biomass to scale all biomass data (default:1000)
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                dev=Inf, verbose=TRUE,
-               refSp = sample(nrow(dat),1),
+               refSp = NULL,
                min_iter = 30,  max_iter = 100, epsilon=0.01,
                ncpu=10, seed=NULL, scaling=1000){
+    
+    refRank <- rankRefs(dat, meta)
+    if(is.null(refSp)){
+        message("No input for reference species, selecting one with the lowest coefficient of variation...")
+        refSp <- refRank$index[1]
+    }
+    if(refRank$hasZero[refSp]){
+        message("[Warning]: The reference species has zero abundance in some samples. This will treated as non-zeros by adding a pseudo count.")
+    }
+    message(paste0("Reference species: ",  rownames(dat)[refSp]))
     
     p <- nrow(dat)
     dat.tss <- apply(dat, 2, function(x)x/sum(x, na.rm = TRUE))
@@ -731,6 +750,9 @@ biomassFromEM <- function(beem.obj){
 #' @param ncpu maximal number of CPUs used (default:10)
 #' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
 paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10, enforceLogistic=FALSE){
+    if(NROW(counts) <7){
+        warning('You have less than 7 species. The estimation of parameters might be inaccurate.')
+    }
     registerDoMC(ncpu)
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
