@@ -570,14 +570,30 @@ testStop <- function(x, epsilon=0.1){
     return(FALSE)
 }
 
-#' Function to order the references for ALR
+#' Function to select references for ALR
 #' @param dat input data in relative abundances
-rankRefs <- function(dat, meta){
+#' @param meta metadata following MDSINE's metadata format
+suggestRefs <- function(dat, meta){
+    sps <- rownames(dat)
+    ##1. remove ref with 0 values
+    message("The following species are not recommended due to 0 values:")
+    fil1 <- rowSums(dat==0)/ncol(dat) > 0.05
+    message(paste0(sps[fil1], collapse=', '))
+    ##2. filtering two tails 
+    tmp <- rowMeans(prop.table(dat,2))
+    fil2 <- tmp<0.005
+    fil3 <- tmp>0.5
+    message("The following species are not recommended due to their low/high abudances:")
+    message(paste0(sps[fil2|fil3], collapse=', '))
     cv <- foreach(s=unique(meta$subjectID), .combine=rbind) %do% {
         apply(dat[, meta$subjectID==s], 1, function(x) sd(x)/mean(x))
     }
-    tmp <- apply(cv, 2, mean)
-    data.frame(cv=tmp, index=rank(tmp), hasZero=rowSums(dat==0) != 0)[order(tmp),]
+    if(!is.null(cv)){
+        cv <- apply(cv,2,mean)
+    }
+    message("The following species is recommended as the reference:")
+    message(names(sort(cv[!(fil1 | fil2 | fil3)])[1]))
+    data.frame(cv=cv, index=1:length(cv), hasZero=fil1, isTooHigh=fil3, isTooLow=fil2)[order(cv),]
 }
 
 #' Function to estimate biomass and parameters simultaneously
@@ -599,14 +615,20 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                refSp = NULL,
                min_iter = 30,  max_iter = 100, epsilon=0.01,
                ncpu=10, seed=NULL, scaling=1000){
-    
-    refRank <- rankRefs(dat, meta)
+
+    if(nrow(dat) < 7){
+        warning("There are less than 7 species. This might results in an inaccurate model.")
+    }    
+    refRank <- suggestRefs(dat, meta)
     if(is.null(refSp)){
         message("No input for reference species, selecting one with the lowest coefficient of variation...")
         refSp <- refRank$index[1]
     }
-    if(refRank$hasZero[refSp]){
-        message("[Warning]: The reference species has zero abundance in some samples. This will treated as non-zeros by adding a pseudo count.")
+    if(sum(dat[refSp,]==0)>0){
+        message("[!]: The reference species has zero abundance in some samples. This will treated as non-zeros by adding a pseudo count.")
+    }
+    if(refRank[refSp, 1]>0.9) {
+        message("[!]: The reference species has high CV (>90%). Parameter estiamtes might be inaccurate (check the trace of weighted mse for convergence).")
     }
     message(paste0("Reference species: ",  rownames(dat)[refSp]))
     
@@ -664,7 +686,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         mse.traj <- c(mse.traj, tmp$mse)
         mse.weighted.traj <- c(mse.weighted.traj, tmp$mse.weighted)
         normCounts <- tmp$normCounts
-        print(tmp$mse)
+        if(verbose) message(paste0("Weighted mse: ", tmp$mse.weighted))
         dat.iter <- normCounts
         if(verbose) message( "##########################")
         
