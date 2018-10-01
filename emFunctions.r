@@ -573,22 +573,24 @@ testStop <- function(x, epsilon=0.1){
 #' Function to select references for ALR
 #' @param dat input data in relative abundances
 #' @param meta metadata following MDSINE's metadata format
-suggestRefs <- function(dat, meta){
+#' @param scaling library size to scale the data to proportions
+suggestRefs <- function(dat, meta, scaling=1){
+    ##dat <- apply(dat,2,function(x)x/sum(x))
     sps <- rownames(dat)
     ##1. remove ref with 0 values
     message("The following species are not recommended due to 0 values:")
     fil1 <- rowSums(dat==0)/ncol(dat) > 0.05
     message(paste0(sps[fil1], collapse=', '))
     ##2. filtering two tails 
-    tmp <- rowMeans(prop.table(dat,2))
-    fil2 <- tmp<0.005
-    fil3 <- tmp>0.5
+    tmp <- rowMeans(apply(dat,2, function(x)x/sum(x)))
+    fil2 <- tmp<0.05
+    fil3 <- tmp==max(tmp)
     message("The following species are not recommended due to their low/high abudances:")
     message(paste0(sps[fil2|fil3], collapse=', '))
     cv <- foreach(s=unique(meta$subjectID), .combine=rbind) %do% {
         apply(dat[, meta$subjectID==s], 1, function(x) sd(x)/mean(x))
     }
-    if(!is.null(cv)){
+    if(!is.null(dim(cv))){
         cv <- apply(cv,2,mean)
     }
     message("The following species is recommended as the reference:")
