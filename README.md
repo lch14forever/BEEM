@@ -12,10 +12,19 @@ BEEM was written in R (>3.3.1) and requires the following packages:
  - pspline
  - monomvn
 
-BEEM scripts can be loaded with the following command in R:
+The BEEM functions can be loaded in R directly with the following commands:
+
 ```r
-source('path/to/this/repo/emFunctions.r')
+beem = RCurl::getURL("https://raw.githubusercontent.com/CSB5/BEEM/master/emFunctions.r", ssl.verifypeer = FALSE)
+eval(parse(text = beem))
 ```
+
+Alternatively the repository together with the example data can be cloned/downloaded. The functions are then loaded with the following commands in R:
+
+```r
+source('local/path/to/beem/emFunctions.r')
+```
+
 ## Input data
 
 The input files for BEEM should have the same format as described in the manual for [MDSINE](https://bitbucket.org/MDSINE/mdsine/). The following two files are required by BEEM:
@@ -55,7 +64,7 @@ We have provided several sample input files that were also analyzed in our manus
 
 ```r
 ## Load functions
-source('path/to/this/repo/emFunctions.r')
+source('emFunctions.r')
 ## Read inputs
 counts <- read.table('counts.txt', head=F, row.names=1)
 metadata <- read.table('metadata.txt', head=T)
@@ -82,7 +91,7 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
 The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/isme.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/time_series_meta.ipynb).
 
 ## Citation
-C Li, L Tucker-Kellogg & N Nagarajan. (2018). System	Biology	Modeling	with Compositional Microbiome	Data	Reveals Personalized	Gut	Microbial	Dynamics	and	Keystone	Species. [*BioRxiv*](https://www.biorxiv.org/content/early/2018/03/27/288803).
+C Li, L Tucker-Kellogg & N Nagarajan. (2018). An expectation-maximization-like algorithm enables accurate ecological modeling using longitudinal metagenome sequencing data [*BioRxiv*](https://www.biorxiv.org/content/early/2018/07/17/288803).
 
 ## Contact
 Please direct any questions or feedback to Chenhao Li (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
