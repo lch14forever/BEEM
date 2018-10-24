@@ -1,4 +1,7 @@
 # BEEM
+
+<img src="logo.png" height="200" align="right" />
+
 BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used [generalized Lotka-Volterra modelling](https://en.wikipedia.org/wiki/Generalized_Lotka–Volterra_equation) (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing. A preprint describing this work will be posted on bioRxiv soon.
 
 Note: BEEM stands for **B**iomass **E**stimation and model inference with an **E**xpectation **M**aximization-like algorithm. 
@@ -50,13 +53,13 @@ We have provided several sample input files that were also analyzed in our manus
 
 #### Data from [Props et. al. (2016)](https://www.nature.com/articles/ismej2016117)
 
- - OTU count `table: isme_analysis/counts.sel.txt`
- - Metadata: `isme_analysis/metadata.sel.txt`
+ - OTU count `table: props_et_al_analysis/counts.sel.txt`
+ - Metadata: `props_et_al_analysis/metadata.sel.txt`
 
 #### Data from [Gibbons et. al. (2017)](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005364)
 
- - OTU count table: `time_series_analysis/{DA,DB,M3,F4}.counts.txt`
- - Metadata: `time_series_analysis/{DA,DB,M3,F4}.metadata.txt`
+ - OTU count table: `gibbons_et_al_analysis/{DA,DB,M3,F4}.counts.txt`
+ - Metadata: `gibbons_et_al_analysis/{DA,DB,M3,F4}.metadata.txt`
 
 ## Usage
 
@@ -88,7 +91,7 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
  
 ### Analyses in the manuscript
 
-The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/isme.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/time_series_meta.ipynb).
+The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/props_et_al.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/gibbons_et_al.ipynb).
 
 ## Citation
 C Li, L Tucker-Kellogg & N Nagarajan. (2018). An expectation-maximization-like algorithm enables accurate ecological modeling using longitudinal metagenome sequencing data [*BioRxiv*](https://www.biorxiv.org/content/early/2018/07/17/288803).

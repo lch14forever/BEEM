@@ -536,7 +536,7 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, sc
         list(w.tmp, mse)
     }
 
-    mse.mat <- (matrix(unlist((w.list[[2]])), p-1)) ##* apply(abs(Xs),2,function(x)x/sum(x))
+    mse.mat <- (matrix(unlist((w.list[[2]])), nrow(tss)-1)) ##* apply(abs(Xs),2,function(x)x/sum(x))
     w <- unlist(w.list[[1]])
 
     mse <- mean(c(mse.mat), na.rm = TRUE)
@@ -594,8 +594,10 @@ suggestRefs <- function(dat, meta, scaling=1){
         cv <- apply(cv,2,mean)
     }
     message("The following species is recommended as the reference:")
-    message(names(sort(cv[!(fil1 | fil2 | fil3)])[1]))
-    data.frame(cv=cv, index=1:length(cv), hasZero=fil1, isTooHigh=fil3, isTooLow=fil2)[order(cv),]
+    sel <- names(sort(cv[!(fil1 | fil2 | fil3)])[1])
+    message(sel)
+    list(table=data.frame(cv=cv, index=1:length(cv), hasZero=fil1, isTooHigh=fil3, isTooLow=fil2)[order(cv),],
+         selected=which(sps==sel))
 }
 
 #' Function to estimate biomass and parameters simultaneously
@@ -623,13 +625,13 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
     }    
     refRank <- suggestRefs(dat, meta)
     if(is.null(refSp)){
-        message("No input for reference species, selecting one with the lowest coefficient of variation...")
-        refSp <- refRank$index[1]
+        message("BEEM selecting reference species as default...")
+        refSp <- refRank$selected
     }
     if(sum(dat[refSp,]==0)>0){
         message("[!]: The reference species has zero abundance in some samples. This will treated as non-zeros by adding a pseudo count.")
     }
-    if(refRank[refSp, 1]>0.9) {
+    if(refRank$table[rownames(dat)[refSp], 1]>0.9) {
         message("[!]: The reference species has high CV (>90%). Parameter estiamtes might be inaccurate (check the trace of weighted mse for convergence).")
     }
     message(paste0("Reference species: ",  rownames(dat)[refSp]))
@@ -714,10 +716,10 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
 #' @param biomass biomass data following MDSINE's biomass data format
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
-#' @param ncpu maximal number of CPUs used (default:10)
+#' @param ncpu maximal number of CPUs used (default:4)
 #' @param infer_flag run inference (default:TRUE)
 param.infer <- function(dat, metadata, biomass,
-                        forceBreak=NULL, dev=Inf, ncpu=10, infer_flag=TRUE){
+                        forceBreak=NULL, dev=Inf, ncpu=4, infer_flag=TRUE){
     registerDoMC(ncpu)
     log.transform <- function(x){
         tmp <- log(x)
@@ -756,6 +758,36 @@ param.infer <- function(dat, metadata, biomass,
     BLASSO(X=Xs, P=NULL, Ys=Ys, Fs=isOutlier, ncpu=ncpu, rmSp=0, vnames=rownames(dat))
 }
 
+#' Diagnose the EM process
+#' @param beem.obj BEEM output list
+#' @param counts counts data following MDSINE's OTU table
+inspectEM <- function(beem.obj, counts){
+    if(NROW(counts) <7){
+        warning('You have less than 7 species. The estimation of parameters might be inaccurate.')
+    }
+    trace.mse.weighted <- beem.obj$trace.mse.weighted
+    idx <- round(length(trace.mse.weighted)/25):length(trace.mse.weighted)
+    if(min(trace.mse.weighted) > trace.mse.weighted[2]){
+        warning('Optimization failed.') ## worse fit than CSS (first iteration)
+        return(NA)
+    }
+    if( sum(trace.mse.weighted[idx] > 1e-5)/length(idx) > 0.3 ){
+        warning('Poor fitting detected.') ## too many iterations with large MSE
+        return(NA)
+    }
+    if( cor(trace.mse.weighted[idx], 1:length(idx), method='spearman') < -0.5){
+        ## dicreasing error
+        return(0)
+    }
+    fit <- lm(trace.mse.weighted[idx]/mad(trace.mse.weighted[idx]) ~ idx)
+    if(sqrt(median(resid(fit)^2)) > 0.5 && coef(fit)[2]>0 ) {
+        warning('Poor convergence detected.') ## not smooth enough
+        return(NA)
+    } 
+    return(0)
+}
+
+
 #' Inferring biomass from BEEM results
 #' @param beem.obj BEEM output list
 biomassFromEM <- function(beem.obj){
@@ -770,13 +802,12 @@ biomassFromEM <- function(beem.obj){
 #' @param beem.obj BEEM output list
 #' @param counts counts data following MDSINE's OTU table
 #' @param metadata metadata following MDSINE's metadata format
+#' @param sparse use the sparse mode to estimate the parameters (default: TRUE)
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
-#' @param ncpu maximal number of CPUs used (default:10)
+#' @param ncpu maximal number of CPUs used (default:4)
 #' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
-paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10, enforceLogistic=FALSE){
-    if(NROW(counts) <7){
-        warning('You have less than 7 species. The estimation of parameters might be inaccurate.')
-    }
+paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, forceBreak=NULL, ncpu=4, enforceLogistic=FALSE){
+    inspectEM(beem.obj, counts)
     registerDoMC(ncpu)
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
@@ -791,6 +822,13 @@ paramFromEM <- function(beem.obj, counts, metadata, forceBreak=NULL, ncpu=10, en
         beem.biomass <- apply(beem.obj$trace.biomass[,em.idx],1,median)
         beem.param <- apply(beem.obj$trace.params[,em.idx],1,median)
     }
+
+    if(!sparse){
+        message('Re-estimating parameters with the non-sparse mode...')
+        return(param.infer(dat=counts, metadata=metadata, biomass=beem.biomass,
+                       forceBreak=forceBreak, ncpu=ncpu)$mdsine)
+    }
+
     p <- nrow(counts)
     ## solve for interaction matrix
     beem.a <- beem.param[1:p]
