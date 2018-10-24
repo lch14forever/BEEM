@@ -2,9 +2,9 @@
 
 <img src="logo.png" height="200" align="right" />
 
-BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used [generalized Lotka-Volterra modelling](https://en.wikipedia.org/wiki/Generalized_Lotka–Volterra_equation) (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing. A preprint describing this work will be posted on bioRxiv soon.
+BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used [generalized Lotka-Volterra modelling](https://en.wikipedia.org/wiki/Generalized_Lotka–Volterra_equation) (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) from **longitudinal** data and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing.
 
-Note: BEEM stands for **B**iomass **E**stimation and model inference with an **E**xpectation **M**aximization-like algorithm. 
+Note: BEEM stands for **B**iomass **E**stimation and model inference with an **E**xpectation **M**aximization-like algorithm. We have now extended the BEEM framework to be able to work with cross-sectional data (BEEM-static, check out our R package [here](https://github.com/CSB5/BEEM-static)).
 
 ## Dependencies
 
