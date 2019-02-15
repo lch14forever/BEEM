@@ -18,7 +18,7 @@ splitAt <- function(x, pos) unname(split(x, cumsum(seq_along(x) %in% pos)))
 #' @param t.out time stamp of output (default: to be the same as input)
 #' @return a vector of fitted value after smoothing
 smooth.deri.glkerns <- function(x, t, deriv=0, t.out=t, smethod='glkerns', ...){
-    suppressMessages(library(lokern))
+    suppressMessages(require(lokern))
     fit.tmp <- glkerns(t, x, deriv=deriv, x.out = t.out, bandwidth=10)$est
     res <- abs(x - fit.tmp)
     res.med <- median(res)
@@ -41,7 +41,7 @@ smooth.deri.glkerns <- function(x, t, deriv=0, t.out=t, smethod='glkerns', ...){
 #' @param norder oder of spline basis (default: 3)
 #' @return a vector of fitted value after smoothing
 smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...){
-    suppressMessages(library(pspline))
+    suppressMessages(require(pspline))
     ## initial fit to find outliers
     fit.tmp <- c(smooth.Pspline(t, x,method=smethod, norder=norder, spar=1e10)$ysmth)
     res <- abs(x - fit.tmp)
@@ -159,7 +159,7 @@ tsoutliers.w.brks <- function(x,t,breaks,dev=2){
 #' @param vnames variable names
 #' @return a data frame in MDSINE's output format
 formatOutput <- function(alpha, beta, gamma=NULL, vnames){
-    suppressMessages(library(reshape2))
+    suppressMessages(require(reshape2))
     p <- length(alpha)
     nPerturbs <- ncol(gamma)
     if(is.null(gamma)) nPerturbs <- 0       
@@ -191,7 +191,7 @@ formatOutput <- function(alpha, beta, gamma=NULL, vnames){
 #' @param seed the seed
 #' @return a list with alpha, beta, and output in MDSINE's format
 BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
-    suppressMessages(library(monomvn))
+    suppressMessages(require(monomvn))
     registerDoMC(ncpu)    
     p <- ncol(X)
     nPerturbs <- ncol(P)
@@ -254,7 +254,7 @@ BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
 #' @param ncpu number of CPU used
 #' @return a list with alpha, beta, and output in MDSINE's format
 BVS <- function(X, P, Ys, Fs, vnames=colnames(X), selBest=FALSE, ncpu=1){
-    suppressMessages(library(BayesVarSel))
+    suppressMessages(require(BayesVarSel))
     p <- ncol(X)
     tmpnames <- paste0("var",1:p)
     colnames(X) <- tmpnames
@@ -621,8 +621,11 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                ncpu=10, seed=NULL, scaling=1000){
 
     if(nrow(dat) < 7){
-        warning("There are less than 7 species. This might results in an inaccurate model.")
+        stop("There are less than 7 species. This might results in an inaccurate model.")
     }    
+    if(length(unique(meta$subjectID)) < 10){
+      warning("Less than 10 biological replicates detected. BEEM will assume that the samples are internally perturbed in each subject.")
+    }
     refRank <- suggestRefs(dat, meta)
     if(is.null(refSp)){
         message("BEEM selecting reference species as default...")
