@@ -493,7 +493,7 @@ suggestRefs <- function(dat, meta, scaling=1){
 #' @param meta metadata following MDSINE's metadata format
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param useSpline use spline to smooth data and calculate gradients (default: TRUE)
-#' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
+#' @param dev deviation (dev * mad) from the median to be considered as outliers (default: 5)
 #' @param verbose print more information (default: TRUE)
 #' @param refSp reference OTU for addative log ratio transformation (default: selected by BEEM)
 #' @param max_iter maximal number of iterations for the EM algorithm (default: 100)
@@ -504,7 +504,7 @@ suggestRefs <- function(dat, meta, scaling=1){
 #' @param scaling median total biomass to scale all biomass data (default:1000)
 #' @export
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
-               dev=Inf, verbose=TRUE,
+               dev=5, verbose=TRUE,
                refSp = NULL,
                min_iter = 30,  max_iter = 100, epsilon=0.01,
                ncpu=10, seed=NULL, scaling=1000){
