@@ -8,24 +8,17 @@ Note: BEEM stands for **B**iomass **E**stimation and model inference with an **E
 
 ## Dependencies
 
-BEEM was written in R (>3.3.1) and requires the following packages: 
+BEEM was written in R (>=3.3.1) and requires the following packages: 
  - foreach
- - doMC
+ - doMC: this currently only works on MacOS or LinuxOS
  - lokern
  - pspline
  - monomvn
 
-The BEEM functions can be loaded in R directly with the following commands:
+You can install BEEM as an R package using devtools
 
 ```r
-beem = RCurl::getURL("https://raw.githubusercontent.com/CSB5/BEEM/master/emFunctions.r", ssl.verifypeer = FALSE)
-eval(parse(text = beem))
-```
-
-Alternatively the repository together with the example data can be cloned/downloaded. The functions are then loaded with the following commands in R:
-
-```r
-source('local/path/to/beem/emFunctions.r')
+devtools::install_github('lch14forever/beem', ref='package')
 ```
 
 ## Input data
@@ -67,7 +60,7 @@ We have provided several sample input files that were also analyzed in our manus
 
 ```r
 ## Load functions
-source('emFunctions.r')
+library(beem)
 ## Read inputs
 counts <- read.table('counts.txt', head=F, row.names=1)
 metadata <- read.table('metadata.txt', head=T)
