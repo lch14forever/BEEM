@@ -689,7 +689,7 @@ biomassFromEM <- function(beem.obj){
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
     em.idx <- which((trace.mse-min.mse) < beem.obj$epsilon*min.mse)
-    biomass <- apply(beem.obj$trace.biomass[,em.idx],1,median)
+    biomass <- apply(data.frame(beem.obj$trace.biomass[,em.idx]),1,median)
     biomass
 }
 
