@@ -605,7 +605,7 @@ suggestRefs <- function(dat, meta, scaling=1){
 #' @param meta metadata following MDSINE's metadata format
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param useSpline use spline to smooth data and calculate gradients (default: TRUE)
-#' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
+#' @param dev deviation (dev * mad) from the median to be considered as outliers (default: 5)
 #' @param verbose print more information (default: TRUE)
 #' @param refSp reference OTU for addative log ratio transformation (default: selected by BEEM)
 #' @param max_iter maximal number of iterations for the EM algorithm (default: 100)
@@ -615,7 +615,7 @@ suggestRefs <- function(dat, meta, scaling=1){
 #' @param seed seed used in BLASSO (default:NULL)
 #' @param scaling median total biomass to scale all biomass data (default:1000)
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
-               dev=Inf, verbose=TRUE,
+               dev=5, verbose=TRUE,
                refSp = NULL,
                min_iter = 30,  max_iter = 100, epsilon=0.01,
                ncpu=10, seed=NULL, scaling=1000){
@@ -624,7 +624,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         stop("There are less than 7 species. This might results in an inaccurate model.")
     }    
     if(length(unique(meta$subjectID)) < 10){
-      warning("Small number (<10) of biological replicates detected. Note that BEEM works best with >10 biological replicates or the time series contains infrequent perturbations.")
+      warning("Small number (<10) of biological replicates detected. Note that BEEM works best with >10 biological replicates or the time series contains intrinsic infrequent perturbations.")
     }
     refRank <- suggestRefs(dat, meta)
     if(is.null(refSp)){
@@ -638,7 +638,11 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         message("[!]: The reference species has high CV (>90%). Parameter estiamtes might be inaccurate (check the trace of weighted mse for convergence).")
     }
     message(paste0("Reference species: ",  rownames(dat)[refSp]))
-    
+
+    ## assuming there is no perturbation for the moment
+    if(ncol(meta) < 5){
+        meta$perturbID <- 0
+    }
     p <- nrow(dat)
     dat.tss <- apply(dat, 2, function(x)x/sum(x, na.rm = TRUE))
     if(verbose) message("Preprocessing data ...")
@@ -763,13 +767,12 @@ param.infer <- function(dat, metadata, biomass,
 
 #' Diagnose the EM process
 #' @param beem.obj BEEM output list
-#' @param counts counts data following MDSINE's OTU table
-inspectEM <- function(beem.obj, counts){
-    if(NROW(counts) <7){
+inspectEM <- function(beem.obj){
+    if(sum(beem.obj$final.params$parameter_type=='growth_rate') < 7){
         warning('You have less than 7 species. The estimation of parameters might be inaccurate.')
     }
     trace.mse.weighted <- beem.obj$trace.mse.weighted
-    idx <- round(length(trace.mse.weighted)/25):length(trace.mse.weighted)
+    idx <- max(round(length(trace.mse.weighted)/25), 2):length(trace.mse.weighted)
     if(min(trace.mse.weighted) > trace.mse.weighted[2]){
         warning('Optimization failed.') ## worse fit than CSS (first iteration)
         return(NA)
@@ -794,6 +797,10 @@ inspectEM <- function(beem.obj, counts){
 #' Inferring biomass from BEEM results
 #' @param beem.obj BEEM output list
 biomassFromEM <- function(beem.obj){
+    if(is.na( inspectEM(beem.obj) )){
+        message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
+        return(NA)
+    }   
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
     em.idx <- which((trace.mse-min.mse) < beem.obj$epsilon*min.mse)
@@ -810,7 +817,10 @@ biomassFromEM <- function(beem.obj){
 #' @param ncpu maximal number of CPUs used (default:4)
 #' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
 paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, forceBreak=NULL, ncpu=4, enforceLogistic=FALSE){
-    inspectEM(beem.obj, counts)
+    if(is.na( inspectEM(beem.obj) )){
+        message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
+        return(NA)
+    }
     registerDoMC(ncpu)
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
