@@ -7,6 +7,12 @@
 formatOutput(alpha, beta, gamma = NULL, vnames)
 }
 \arguments{
+\item{alpha}{growth rates}
+
+\item{beta}{interaction matrix}
+
+\item{gamma}{perturbation matrix}
+
 \item{vnames}{variable names}
 }
 \value{

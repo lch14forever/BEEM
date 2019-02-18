@@ -1,4 +1,4 @@
 *~
 .ipynb_checkpoints
 .Rproj.user
-.Rhistory
+*.Rhistory*

@@ -4,12 +4,10 @@
 \alias{inspectEM}
 \title{inspectEM}
 \usage{
-inspectEM(beem.obj, counts)
+inspectEM(beem.obj)
 }
 \arguments{
 \item{beem.obj}{BEEM output list}
-
-\item{counts}{counts data following MDSINE's OTU table}
 }
 \description{
 Diagnose the EM process

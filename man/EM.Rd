@@ -4,7 +4,7 @@
 \alias{EM}
 \title{EM}
 \usage{
-EM(dat, meta, forceBreak = NULL, useSpline = TRUE, dev = Inf,
+EM(dat, meta, forceBreak = NULL, useSpline = TRUE, dev = 5,
   verbose = TRUE, refSp = NULL, min_iter = 30, max_iter = 100,
   epsilon = 0.01, ncpu = 10, seed = NULL, scaling = 1000)
 }
@@ -17,7 +17,7 @@ EM(dat, meta, forceBreak = NULL, useSpline = TRUE, dev = Inf,
 
 \item{useSpline}{use spline to smooth data and calculate gradients (default: TRUE)}
 
-\item{dev}{deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)}
+\item{dev}{deviation (dev * mad) from the median to be considered as outliers (default: 5)}
 
 \item{verbose}{print more information (default: TRUE)}
 
