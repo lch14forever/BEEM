@@ -46,13 +46,13 @@ We have provided several sample input files that were also analyzed in our manus
 
 #### Data from [Props et. al. (2016)](https://www.nature.com/articles/ismej2016117)
 
- - OTU count `table: props_et_al_analysis/counts.sel.txt`
- - Metadata: `props_et_al_analysis/metadata.sel.txt`
+ - OTU count table: `vignettes/props_et_al_analysis/counts.sel.txt`
+ - Metadata: `vignettes/props_et_al_analysis/metadata.sel.txt`
 
 #### Data from [Gibbons et. al. (2017)](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005364)
 
- - OTU count table: `gibbons_et_al_analysis/{DA,DB,M3,F4}.counts.txt`
- - Metadata: `gibbons_et_al_analysis/{DA,DB,M3,F4}.metadata.txt`
+ - OTU count table: `vignettes/gibbons_et_al_analysis/{DA,DB,M3,F4}.counts.txt`
+ - Metadata: `vignettes/gibbons_et_al_analysis/{DA,DB,M3,F4}.metadata.txt`
 
 ## Usage
 
@@ -84,7 +84,7 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
  
 ### Analyses in the manuscript
 
-The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/props_et_al.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/gibbons_et_al.ipynb).
+The commands for reproducing the analysis reportd in the manuscript are presented as two jupyter notebooks: (1) [notebook for Props et. al.](https://github.com/lch14forever/BEEM/blob/package/vignettes/props_et_al.ipynb) and (2) [notebook for Gibbons et. al.](https://github.com/lch14forever/BEEM/blob/package/vignettes/gibbons_et_al.ipynb).
 
 ## Citation
 C Li, L Tucker-Kellogg & N Nagarajan. (2018). An expectation-maximization-like algorithm enables accurate ecological modeling using longitudinal metagenome sequencing data [*BioRxiv*](https://www.biorxiv.org/content/early/2018/07/17/288803).

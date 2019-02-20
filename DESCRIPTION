@@ -3,11 +3,10 @@ Title: BEEM: Estimating Lotka-Volterra models from time-course microbiome sequen
 Version: 0.0.0.9000
 Author: Chenhao Li, Niranjan Nagarajan
 Maintainer: Chenhao Li <lich@gis.a-star.edu.sg>
-Imports:
+Description: BEEM stands for Biomass Estimation and model inference with an Expectation Maximization-like algorithm. BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used generalized Lotka-Volterra modelling (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) from longitudinal data and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing.
+Depends: R (>= 3.3.1),
     foreach,
     doMC
-Description: BEEM stands for Biomass Estimation and model inference with an Expectation Maximization-like algorithm. BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used generalized Lotka-Volterra modelling (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) from longitudinal data and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing.
-Depends: R (>= 3.3.1)
 License: MIT
 Encoding: UTF-8
 LazyData: true
