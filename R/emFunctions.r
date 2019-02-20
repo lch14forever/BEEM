@@ -1,24 +1,19 @@
-## required packages:
-## foreach, doMC, pspline, lokern, reshape2, monomvn
-
-suppressMessages(library(foreach))
-suppressMessages(library(doMC))
-
-#' Function to split a vector into a list at specified positions 
-#' adapted from http://stackoverflow.com/questions/16357962/r-split-numeric-vector-at-position
+#' @title splitAt
+#' @description Function to split a vector into a list at specified positions. Adapted from http://stackoverflow.com/questions/16357962/r-split-numeric-vector-at-position
 #' @param x vetor of data
 #' @param pos positions to split the data vector
 #' @return a list of split data
 splitAt <- function(x, pos) unname(split(x, cumsum(seq_along(x) %in% pos)))
 
-#' Function to smooth data and calculate derivative with glkerns
+#' @title smooth.deri.glkerns
+#' @description Function to smooth data and calculate derivative with glkerns
+#' @import lokern
 #' @param x vector of data
 #' @param t time stamp of each point
 #' @param deriv order of derivative to calculate
 #' @param t.out time stamp of output (default: to be the same as input)
 #' @return a vector of fitted value after smoothing
 smooth.deri.glkerns <- function(x, t, deriv=0, t.out=t, smethod='glkerns', ...){
-    suppressMessages(library(lokern))
     fit.tmp <- glkerns(t, x, deriv=deriv, x.out = t.out, bandwidth=10)$est
     res <- abs(x - fit.tmp)
     res.med <- median(res)
@@ -32,16 +27,17 @@ smooth.deri.glkerns <- function(x, t, deriv=0, t.out=t, smethod='glkerns', ...){
     }
 }
 
-#' Function to smooth data and calculate derivative with pspline
+#' @title smooth.deri.pspline
+#' @description Function to smooth data and calculate derivative with pspline
 #' @param x vector of data
 #' @param t time stamp of each point
 #' @param deriv order of derivative to calculate
 #' @param t.out time stamp of output (default: to be the same as input)
 #' @param method spline fitting method used for "pspline" (default: 3)
 #' @param norder oder of spline basis (default: 3)
+#' @import pspline
 #' @return a vector of fitted value after smoothing
 smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...){
-    suppressMessages(library(pspline))
     ## initial fit to find outliers
     fit.tmp <- c(smooth.Pspline(t, x,method=smethod, norder=norder, spar=1e10)$ysmth)
     res <- abs(x - fit.tmp)
@@ -53,7 +49,8 @@ smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...
     c(predict(smooth.Pspline(t[!outliers], x[!outliers],method=smethod, norder=norder, ...), t.out, deriv ) )
 }
 
-#' Function to smooth data and calculate derivative with pspline
+#' @title SmoothGradient
+#' @description Function to smooth data and calculate derivative with pspline
 #' @param m a matrix of data (variable in columns and time in rows)
 #' @param t matrix or vector of time points for each data
 #' @param breaks break points to re-smooth the data
@@ -88,7 +85,8 @@ SmoothGradient <- function(m, t, breaks, t.out = t, deriv=1, ncpu=10, method='ps
     smoothed    
 }
 
-#' Function to transform a matrix of compositions with addative log ratio (alr)
+#' @title alr.transformation
+#' @description Function to transform a matrix of compositions with addative log ratio (alr)
 #' @param m matrix of data (variables in columns, samples in rows) 
 #' @param refSp reference variable
 #' @return transformed matrix
@@ -100,7 +98,8 @@ alr.transformation <- function(m, refSp){
     log(m/m[,refSp])
 }
 
-#' Function to inverse transform a matrix from addative log ratio (alr) to compostions
+#' @title alr.transformation.inv
+#' @description Function to inverse transform a matrix from addative log ratio (alr) to compostions
 #' @param alr matrix of data (variables in columns, samples in rows) 
 #' @param refSp reference variable
 #' @return inverse transformed matrix
@@ -110,7 +109,8 @@ alr.transformation.inv <- function(alr,refSp){
     tmp/rowSums(tmp,na.rm=TRUE)
 }
 
-#' Function to transform a matrix of compositions with centered log ratio (clr)
+#' @title clr.transformation
+#' @description Function to transform a matrix of compositions with centered log ratio (clr)
 #' @param m matrix of data (variables in columns, samples in rows)
 #' @return transformed matrix
 clr.transformation <- function(m){
@@ -118,7 +118,8 @@ clr.transformation <- function(m){
     log(m) - rowMeans(log(m))
 }
 
-#' Function to detect outliers in time serires
+#' @title tsoutliers
+#' @description Function to detect outliers in time serires
 #' @param x vector of time series
 #' @param t vector of time stamps
 #' @param dev deviation (dev * mad) from the median to be considered as outliers
@@ -138,7 +139,8 @@ tsoutliers <- function(x,t,dev=2){
 }
 
 
-#' Function to detect outliers in time serires
+#' @title tsoutliers.w.brks
+#' @description Function to detect outliers in time serires
 #' @param x vector of time series
 #' @param t vector of time stamps
 #' @param breaks break points to re-smooth the data
@@ -152,14 +154,15 @@ tsoutliers.w.brks <- function(x,t,breaks,dev=2){
 }
 
 
-#' Function to convert parameter vector alpha and matrix beta to MDSINE's output format
-#' @param alpha
-#' @param beta
-#' @param gamma
+#' @title formatOutput
+#' @description Function to convert parameter vector alpha and matrix beta to MDSINE's output format
+#' @importFrom reshape2 melt
+#' @param alpha growth rates
+#' @param beta interaction matrix
+#' @param gamma perturbation matrix
 #' @param vnames variable names
 #' @return a data frame in MDSINE's output format
 formatOutput <- function(alpha, beta, gamma=NULL, vnames){
-    suppressMessages(library(reshape2))
     p <- length(alpha)
     nPerturbs <- ncol(gamma)
     if(is.null(gamma)) nPerturbs <- 0       
@@ -180,7 +183,9 @@ formatOutput <- function(alpha, beta, gamma=NULL, vnames){
     parm
 }
 
-#' Function to estimate parameters using gradient matching bayesian lasso 
+#' @title BLASSO
+#' @description Function to estimate parameters using gradient matching bayesian lasso 
+#' @import monomvn
 #' @param X matrix of data (variables in columns, measurements in rows)
 #' @param P matrix of perturbation indicators
 #' @param Ys matrix of response (variables in columns, measurements in rows)
@@ -191,7 +196,6 @@ formatOutput <- function(alpha, beta, gamma=NULL, vnames){
 #' @param seed the seed
 #' @return a list with alpha, beta, and output in MDSINE's format
 BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
-    suppressMessages(library(monomvn))
     registerDoMC(ncpu)    
     p <- ncol(X)
     nPerturbs <- ncol(P)
@@ -244,128 +248,8 @@ BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
                 mdsine=formatOutput(alpha.v, beta.m, gamma.m, vnames)))
 }
 
-#' Function to estimate parameters using gradient matching bayesian variable select
-#' @param X matrix of data (variables in columns, measurements in rows)
-#' @param P matrix of perturbation indicators
-#' @param Ys matrix of response (variables in columns, measurements in rows)
-#' @param Fs matrix of filter indicating whether the Y-X pair is used
-#' @param vnames the name of species to format output
-#' @param selBest select the best model (default: FALSE, i.e. use the best model where the intercept is positive)
-#' @param ncpu number of CPU used
-#' @return a list with alpha, beta, and output in MDSINE's format
-BVS <- function(X, P, Ys, Fs, vnames=colnames(X), selBest=FALSE, ncpu=1){
-    suppressMessages(library(BayesVarSel))
-    p <- ncol(X)
-    tmpnames <- paste0("var",1:p)
-    colnames(X) <- tmpnames
-    nPerturbs <- ncol(P)
-    X[is.na(X)] <- 0
-    Fs[is.na(Fs)] <- TRUE    
-    theta <- foreach(o = 1:p, .combine=cbind) %do% {
-        Y <- Ys[, o]
-        f <- Fs[, o]
-        if(is.null(P)){
-            sink("/dev/null")
-            bvs.fit <- Bvs("Y~.", fixed.cov = c("Intercept",tmpnames[o]),
-                           data=data.frame(X[!f,],Y=Y[!f]),n.keep=100)
-            sink()
-        }else{
-            sink("/dev/null")
-            bvs.fit <- Bvs("Y~.", fixed.cov = c("Intercept",tmpnames[o]),
-                            data=data.frame(P[!f,],X[!f,],Y=Y[!f]),n.keep=100)
-            sink()
-        }
-        apply(BMAcoeff.new(bvs.fit,ncpu=ncpu,best=selBest),2,mean)        
-    }    
-    alpha.v <- rep(0, p)
-    beta.m <- matrix(0, p,p)
-    alpha.v <- theta[1,]
-    if(is.null(nPerturbs)){
-        gamma.m <- NULL
-        beta.m <- t(theta[-1,])
-    }else{
-        gamma.m <- matrix(0, nrow=p, ncol=nPerturbs)
-        gamma.m <- t(theta[-1,][1:nPerturbs,])
-        beta.m <- t(theta[-1,][-(1:nPerturbs),])
-        gamma.m <- postProcessGamma(alpha.v, gamma.m)            
-    }
-    return(list(alpha.v=alpha.v, beta.m=beta.m, gamma.m=gamma.m,
-                mdsine=formatOutput(alpha.v, beta.m, gamma.m, vnames)))
-}
-
-
-
-#' Function adapted from package "BayesVarSel". Plots are supressed by default
-#' @param x BVS object from Bvs function
-#' @param ncpu number of CPU used
-#' @param n.sim number of simulation per model (default: 5000)
-#' @param method method for sampling (default: svd)
-#' @param best use the best model (default: FALSE, i.e. choose a model with positive intercept)
-BMAcoeff.new <- function (x, ncpu, n.sim = 5000, method = "svd", best=FALSE) {
-    registerDoMC(ncpu)    
-    if (!is.null(x$lmnull)) {
-        if (colnames(x$lmnull$x)[1] == "(Intercept)") {
-            colnames(x$lmnull$x)[1] <- "Intercept"
-        }
-    }
-    if (colnames(x$lmfull$x)[1] == "(Intercept)") {
-        colnames(x$lmfull$x)[1] <- "Intercept"
-    }
-    
-    n.model <- dim(x$modelsprob)[1]
-    name.y <- colnames(x$lmfull$model[1])
-    bma.coeffs <- matrix(0, nrow = n.sim, ncol = length(x$lmfull$coefficients))
-    colnames(bma.coeffs) <- colnames(x$lmfull$x)
-    models <- rep(1:n.model, n.sim)    
-    t.models <- table(models)
-    cs.tmodels <- cumsum(t.models)
-    X <- x$lmfull$x
-    
-    regulation <- foreach (iter=1:length(t.models), .combine=c) %dopar% {
-        rMD <- as.numeric(names(t.models)[iter])
-        covsrMD <- names(x$modelsprob[rMD, ])[x$modelsprob[rMD, ] == "*"]
-        datarMD <- as.data.frame(cbind(x$lmfull$model[, name.y], X[, covsrMD]))
-        colnames(datarMD) <- c(name.y, covsrMD)
-        if (!is.null(x$lmnull)) {
-            datarMD <- cbind(datarMD, x$lmnull$x)
-        }
-        colnames(datarMD) <- gsub("`", "", colnames(datarMD))
-        formMD <- as.formula(paste(name.y, "~.-1", sep = ""))
-        fitrMD <- lm(formula = formMD, data = as.data.frame(datarMD), qr = TRUE)
-        prod(fitrMD$coefficients)
-    }
-    if(best || all(regulation<0)){
-        idx <- 1
-    }else{
-        idx <- which(regulation>0)[1]
-    }    
-    
-    rMD <- as.numeric(names(t.models)[idx])
-    howmany <- t.models[idx]
-    covsrMD <- names(x$modelsprob[rMD, ])[x$modelsprob[rMD, ] == "*"]
-    datarMD <- as.data.frame(cbind(x$lmfull$model[, name.y], X[, covsrMD]))
-    colnames(datarMD) <- c(name.y, covsrMD)
-    if (!is.null(x$lmnull)) {
-        datarMD <- cbind(datarMD, x$lmnull$x)
-    }
-    colnames(datarMD) <- gsub("`", "", colnames(datarMD))
-    formMD <- as.formula(paste(name.y, "~.-1", sep = ""))
-    fitrMD <- lm(formula = formMD, data = as.data.frame(datarMD), qr = TRUE)
-    Rinv <- qr.solve(qr.R(fitrMD$qr))
-    iXtX <- Rinv %*% t(Rinv)
-    Sigma <- sum(fitrMD$residuals * datarMD[, name.y]) * iXtX/fitrMD$df
-    rcoeff <- rmvt(n = howmany, sigma = Sigma, df = fitrMD$df, 
-                   delta = fitrMD$coefficients, type = "shifted", 
-                   method = method)
-    bma.coeffs[,names(fitrMD$coefficients)] <- rcoeff
-    
-    class(bma.coeffs) <- "bma.coeffs"
-    return(bma.coeffs)
-}
-
-
-
-#' Function to perform cumulative sum scaling (CSS)
+#' @title cumSumScale
+#' @description Function to perform cumulative sum scaling (CSS)
 #' @param m matrix of data (variables in columns, measurements in rows)
 #' @param p quantile used for normalization (default: 0.5)
 cumSumScale <- function(m, p=0.5){
@@ -379,9 +263,8 @@ cumSumScale <- function(m, p=0.5){
     return(list("normCounts" = dat.css, "normFactors"=nf))
 }
 
-#' Function to preprocess input data
-#' Input counts are normalized with CSS within each subject across all time points 
-#' and then normalized across subjects with method described by David et. al.
+#' @title preProcess
+#' @description Function to preprocess input data. Input counts are normalized with CSS within each subject across all time points and then normalized across subjects with method described by David et. al.
 #' @param counts input data following MDSINE's OTU table (i.e. variables in rows and samples in columns)
 #' @param metadata metadata following MDSINE's metadata format
 #' @param rsp reference species used for alr transformation
@@ -456,8 +339,8 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
     list(normData=dat.norm.scale, perturbInd=mu, alrGradient=dalr_x_dt, isOutlier=isOutlier)    
 }
 
-#' Function to filter small interactions
-#' small interaction is defined relative to the mean of the diagonal of the matrix
+#' @title postProcessBeta
+#' @description Function to filter small interactions. Small interaction is defined relative to the mean of the diagonal of the matrix
 #' @param beta interaction matrix estimated with BLASSO
 #' @param thre_pos threshold used to remove small positive interactions (default 1e-3 * slef interaction)
 #' @param thre_neg threshold used to remove small negative interactions (default 1e-3 * slef interaction)
@@ -475,8 +358,8 @@ postProcessBeta <- function(beta, thre_pos=1e-3, thre_neg=1e-3){
     beta
 }
 
-#' Function to filter small perturbation effect
-#' small interaction is defined relative to the mean of the diagonal of the matrix
+#' @title postProcessGamma
+#' @description Function to filter small perturbation effect. Small interaction is defined relative to the mean of the diagonal of the matrix
 #' @param alpha growth vector estimated with BLASSO
 #' @param gamma perterbation effect matrix estimated with BLASSO
 #' @param thre threshold used to remove small perturbation effect (default 1e-2 * self interactions)
@@ -485,7 +368,8 @@ postProcessGamma <- function(alpha, gamma, thre=1e-2){
     gamma * sweep(abs(gamma), 1, f , '>')    
 }
 
-#' Function to calculate biomass for each sample
+#' @title NORM
+#' @description Function to calculate biomass for each sample
 #' @param tss matrix of relative abundances (proportions), variables in rows and sample in columns
 #' @param gradients matrix of gradients of addative log (alr) transformed abundances
 #' @param perturbInd matrix of perturbation indicator generated by preProcess
@@ -559,7 +443,8 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, sc
     list(biomass=w, normCounts=normCounts, mse=mse, mse.weighted=mse.weighted)
 }
 
-#' Function to determine whether to stop the EM
+#' @title testStop
+#' @description Function to determine whether to stop the EM
 #' @param x a vector of mse trace
 #' @param epsilon tolerance of mse
 #' @return a boolean value about the termination
@@ -570,10 +455,12 @@ testStop <- function(x, epsilon=0.1){
     return(FALSE)
 }
 
-#' Function to select references for ALR
+#' @title suggestRefs
+#' @description Function to select references for ALR
 #' @param dat input data in relative abundances
 #' @param meta metadata following MDSINE's metadata format
 #' @param scaling library size to scale the data to proportions
+#' @export
 suggestRefs <- function(dat, meta, scaling=1){
     ##dat <- apply(dat,2,function(x)x/sum(x))
     sps <- rownames(dat)
@@ -600,12 +487,13 @@ suggestRefs <- function(dat, meta, scaling=1){
          selected=which(sps==sel))
 }
 
-#' Function to estimate biomass and parameters simultaneously
+#' @title EM
+#' @description Function to estimate biomass and parameters simultaneously
 #' @param dat input data following MDSINE's OTU table (i.e. variables in rows and samples in columns)
 #' @param meta metadata following MDSINE's metadata format
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param useSpline use spline to smooth data and calculate gradients (default: TRUE)
-#' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
+#' @param dev deviation (dev * mad) from the median to be considered as outliers (default: 5)
 #' @param verbose print more information (default: TRUE)
 #' @param refSp reference OTU for addative log ratio transformation (default: selected by BEEM)
 #' @param max_iter maximal number of iterations for the EM algorithm (default: 100)
@@ -614,16 +502,23 @@ suggestRefs <- function(dat, meta, scaling=1){
 #' @param ncpu maximal number of CPUs used (default:10)
 #' @param seed seed used in BLASSO (default:NULL)
 #' @param scaling median total biomass to scale all biomass data (default:1000)
+#' @export
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
-               dev=Inf, verbose=TRUE,
+               dev=5, verbose=TRUE,
                refSp = NULL,
                min_iter = 30,  max_iter = 100, epsilon=0.01,
                ncpu=10, seed=NULL, scaling=1000){
 
     if(nrow(dat) < 7){
-        warning("There are less than 7 species. This might results in an inaccurate model.")
+        message("[!]: There are less than 7 species. This might results in an inaccurate model.")
     }    
+    if(length(unique(meta$subjectID)) < 10){
+        message("[!]: Small number (<10) of biological replicates detected. Note that BEEM works best with >10 biological replicates or the time series contains intrinsic infrequent perturbations.")
+    }
     refRank <- suggestRefs(dat, meta)
+    if(median(refRank$table$cv) < 0.4 ){
+        message("[!]: Low variation detected across time series. Are you sure the input data is not at equilibrium?")
+    }
     if(is.null(refSp)){
         message("BEEM selecting reference species as default...")
         refSp <- refRank$selected
@@ -635,7 +530,10 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         message("[!]: The reference species has high CV (>90%). Parameter estiamtes might be inaccurate (check the trace of weighted mse for convergence).")
     }
     message(paste0("Reference species: ",  rownames(dat)[refSp]))
-    
+    ## assuming there is no perturbation for the moment
+    if(ncol(meta) < 5){
+        meta$perturbID <- 0
+    }
     p <- nrow(dat)
     dat.tss <- apply(dat, 2, function(x)x/sum(x, na.rm = TRUE))
     if(verbose) message("Preprocessing data ...")
@@ -710,7 +608,8 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
 }
 
 
-#' Independent function for inferring parameters with Bayesian Lasso
+#' @title param.infer
+#' @description Independent function for inferring parameters with Bayesian Lasso
 #' @param dat input data following MDSINE's OTU table
 #' @param metadata metadata following MDSINE's metadata format
 #' @param biomass biomass data following MDSINE's biomass data format
@@ -718,6 +617,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
 #' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
 #' @param ncpu maximal number of CPUs used (default:4)
 #' @param infer_flag run inference (default:TRUE)
+#' @export
 param.infer <- function(dat, metadata, biomass,
                         forceBreak=NULL, dev=Inf, ncpu=4, infer_flag=TRUE){
     registerDoMC(ncpu)
@@ -758,15 +658,16 @@ param.infer <- function(dat, metadata, biomass,
     BLASSO(X=Xs, P=NULL, Ys=Ys, Fs=isOutlier, ncpu=ncpu, rmSp=0, vnames=rownames(dat))
 }
 
-#' Diagnose the EM process
+#' @title inspectEM
+#' @description Diagnose the EM process
 #' @param beem.obj BEEM output list
-#' @param counts counts data following MDSINE's OTU table
-inspectEM <- function(beem.obj, counts){
-    if(NROW(counts) <7){
+#' @export
+inspectEM <- function(beem.obj){
+    if(sum(beem.obj$final.params$parameter_type=='growth_rate') < 7){
         warning('You have less than 7 species. The estimation of parameters might be inaccurate.')
     }
     trace.mse.weighted <- beem.obj$trace.mse.weighted
-    idx <- round(length(trace.mse.weighted)/25):length(trace.mse.weighted)
+    idx <- max(round(length(trace.mse.weighted)/25), 2):length(trace.mse.weighted)
     if(min(trace.mse.weighted) > trace.mse.weighted[2]){
         warning('Optimization failed.') ## worse fit than CSS (first iteration)
         return(NA)
@@ -788,17 +689,25 @@ inspectEM <- function(beem.obj, counts){
 }
 
 
-#' Inferring biomass from BEEM results
+
+#' @title biomassFromEM
+#' @description Inferring biomass from BEEM results
 #' @param beem.obj BEEM output list
+#' @export
 biomassFromEM <- function(beem.obj){
+    if(is.na( inspectEM(beem.obj) )){
+        message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
+        return(NA)
+    } 
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
     em.idx <- which((trace.mse-min.mse) < beem.obj$epsilon*min.mse)
-    biomass <- apply(beem.obj$trace.biomass[,em.idx],1,median)
+    biomass <- apply(data.frame(beem.obj$trace.biomass[,em.idx]),1,median)
     biomass
 }
 
-#' Inferring parameters from BEEM results
+#' @title paramFromEM
+#' @description Inferring parameters from BEEM results
 #' @param beem.obj BEEM output list
 #' @param counts counts data following MDSINE's OTU table
 #' @param metadata metadata following MDSINE's metadata format
@@ -806,8 +715,12 @@ biomassFromEM <- function(beem.obj){
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param ncpu maximal number of CPUs used (default:4)
 #' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
+#' @export
 paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, forceBreak=NULL, ncpu=4, enforceLogistic=FALSE){
-    inspectEM(beem.obj, counts)
+    if(is.na( inspectEM(beem.obj) )){
+        message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
+        return(NA)
+    } 
     registerDoMC(ncpu)
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
