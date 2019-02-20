@@ -510,12 +510,15 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                ncpu=10, seed=NULL, scaling=1000){
 
     if(nrow(dat) < 7){
-        warning("There are less than 7 species. This might results in an inaccurate model.")
+        message("There are less than 7 species. This might results in an inaccurate model.")
     }    
     if(length(unique(meta$subjectID)) < 10){
-        warning("Small number (<10) of biological replicates detected. Note that BEEM works best with >10 biological replicates or the time series contains intrinsic infrequent perturbations.\n")
+        message("Small number (<10) of biological replicates detected. Note that BEEM works best with >10 biological replicates or the time series contains intrinsic infrequent perturbations.")
     }
     refRank <- suggestRefs(dat, meta)
+    if(mean(refRank$table$cv) < 0.5 ){
+        message("Low variation detected across time series. Are you sure the input data is not at equilibrium?")
+    }
     if(is.null(refSp)){
         message("BEEM selecting reference species as default...")
         refSp <- refRank$selected
