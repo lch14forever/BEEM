@@ -4,10 +4,12 @@
 \alias{biomassFromEM}
 \title{biomassFromEM}
 \usage{
-biomassFromEM(beem.obj)
+biomassFromEM(beem.obj, forceSkipWarning = FALSE)
 }
 \arguments{
 \item{beem.obj}{BEEM output list}
+
+\item{forceSkipWarning}{Use with caution! Force to skip model fit check.}
 }
 \description{
 Inferring biomass from BEEM results

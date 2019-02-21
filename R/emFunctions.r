@@ -690,9 +690,10 @@ inspectEM <- function(beem.obj){
 #' @title biomassFromEM
 #' @description Inferring biomass from BEEM results
 #' @param beem.obj BEEM output list
+#' @param forceSkipWarning Use with caution! Force to skip model fit check.
 #' @export
-biomassFromEM <- function(beem.obj){
-    if(is.na( inspectEM(beem.obj) )){
+biomassFromEM <- function(beem.obj, forceSkipWarning=FALSE){
+    if(is.na( inspectEM(beem.obj) ) & !forceSkipWarning){
         message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
         return(NA)
     } 
@@ -712,9 +713,10 @@ biomassFromEM <- function(beem.obj){
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param ncpu maximal number of CPUs used (default:4)
 #' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
+#' @param forceSkipWarning Use with caution! Force to skip model fit check.
 #' @export
-paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, forceBreak=NULL, ncpu=4, enforceLogistic=FALSE){
-    if(is.na( inspectEM(beem.obj) )){
+paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, forceBreak=NULL, ncpu=4, enforceLogistic=FALSE, forceSkipWarning=FALSE){
+    if(is.na( inspectEM(beem.obj) ) & !forceSkipWarning){
         message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
         return(NA)
     } 
