@@ -516,7 +516,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         message("[!]: Small number (<10) of biological replicates detected. Note that BEEM works best with >10 biological replicates or the time series contains intrinsic infrequent perturbations.")
     }
     refRank <- suggestRefs(dat, meta)
-    if(median(refRank$table$cv) < 0.4 ){
+    if(median(refRank$table$cv, na.rm=TRUE) < 0.4 ){
         message("[!]: Low variation detected across time series. Are you sure the input data is not at equilibrium?")
     }
     if(is.null(refSp)){
