@@ -328,14 +328,20 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
         }
         isOutlier <- cbind(isOutlier, outliers.tmp)
         ## scaling
-        dat.tmp.norm <- dat.tmp.norm * scaling ##* sf[subj.id==i]
+        dat.tmp.norm <- dat.tmp.norm * scaling 
         dat.norm.scale <- cbind(dat.norm.scale, dat.tmp.norm)
+        ## find relative change in relative abundances
+        dat.tss.tmp <- dat.tss[,sel]
+        rel_diff <- cbind(rel_diff,
+                          cbind(Inf, t(diff(t(dat.tss.tmp))))/(dat.tss.tmp))
     }
     if(finite_diff){
         ## detect outliers for all gradients
         isOutlier <- t(apply(dalr_x_dt,1, function(x)
             abs(x-median(x, na.rm = TRUE))/mad(x, na.rm = TRUE) > dev ))
     }
+    equilibrium_thre <- 0.05
+    isOutlier[,colSums(abs(rel_diff) < equilibrium_thre) > nrow(rel_diff) * 0.8] <- TRUE
     list(normData=dat.norm.scale, perturbInd=mu, alrGradient=dalr_x_dt, isOutlier=isOutlier)    
 }
 
@@ -448,20 +454,27 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, sc
 #' @param x a vector of mse trace
 #' @param epsilon tolerance of mse
 #' @return a boolean value about the termination
-testStop <- function(x, epsilon=0.1){
-    ## if(which.min(x)==length(x)) {return(FALSE)} ## MSE is still decreasing
-    min_mse <- min(x)
-    if(x[length(x)]-min_mse> min_mse * epsilon){return(TRUE)}    
+testStop <- function(x, epsilon=0.002, win=3){
+    ## MSE plateau for stopIter iterations
+    len <- length(x)
+    ## moving window smoothing
+    x <- sapply(win:len, function(i) abs( median(x[(i-win+1):i]) ) )
+    len <- length(x)
+    if(len > win){
+        testMSE <- x[(len-win+1):len]
+        if(all(abs(diff(testMSE))/(testMSE[-1]) <= epsilon)){
+            return(TRUE)}
+    }
     return(FALSE)
 }
+
 
 #' @title suggestRefs
 #' @description Function to select references for ALR
 #' @param dat input data in relative abundances
 #' @param meta metadata following MDSINE's metadata format
-#' @param scaling library size to scale the data to proportions
 #' @export
-suggestRefs <- function(dat, meta, scaling=1){
+suggestRefs <- function(dat, meta){
     ##dat <- apply(dat,2,function(x)x/sum(x))
     sps <- rownames(dat)
     ##1. remove ref with 0 values
@@ -496,9 +509,10 @@ suggestRefs <- function(dat, meta, scaling=1){
 #' @param dev deviation (dev * mad) from the median to be considered as outliers (default: 5)
 #' @param verbose print more information (default: TRUE)
 #' @param refSp reference OTU for addative log ratio transformation (default: selected by BEEM)
+#' @param warmup_iter number of iterations to skip for estimating parameters (default: 50)
 #' @param max_iter maximal number of iterations for the EM algorithm (default: 100)
-#' @param min_iter minimal number of iterations for the EM algorithm (default: 30)
-#' @param epsilon tolerance threshold to early stop the iterations (default: 0.01)
+#' @param min_iter minimal number of iterations for the EM algorithm (default: warmup_iter/2)
+#' @param converge_thres tolerance of change in mse to determine convergence (default: 1e-3)
 #' @param ncpu maximal number of CPUs used (default:10)
 #' @param seed seed used in BLASSO (default:NULL)
 #' @param scaling median total biomass to scale all biomass data (default:1000)
@@ -506,12 +520,15 @@ suggestRefs <- function(dat, meta, scaling=1){
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                dev=5, verbose=TRUE,
                refSp = NULL,
-               min_iter = 30,  max_iter = 100, epsilon=0.01,
+               warmup_iter = 50, min_iter = warmup_iter/2,  max_iter = 100, converge_thres=0.001, 
                ncpu=10, seed=NULL, scaling=1000){
 
     if(nrow(dat) < 7){
         message("[!]: There are less than 7 species. This might results in an inaccurate model.")
-    }    
+    }
+    if(nrow(dat) * ncol(dat) < ncol(dat) + nrow(dat) * (nrow(dat) + 1) ) {
+        message("[!]: You might have insufficient data for model fitting.")        
+    }
     if(length(unique(meta$subjectID)) < 10){
         message("[!]: Small number (<10) of biological replicates detected. Note that BEEM works best with >10 biological replicates or the time series contains intrinsic infrequent perturbations.")
     }
@@ -580,7 +597,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         parm.traj <- cbind(parm.traj, tmp)
 
         ## test for termination
-        if(iter > min_iter && testStop(mse.traj, epsilon)) break
+        if(iter > min_iter && testStop(mse.traj, converge_thres)) break
         if(verbose) message( "####normalize (M step)####")
         
         tmp <- NORM(dat.tss, gradients.T, t(perturbInd), meta, refSp, list(alpha=alpha.v, beta=beta.m, gamma=gamma.m), ncpu=ncpu, scale=scaling, smooth=useSpline, forceBreak = forceBreak)
@@ -593,7 +610,10 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         if(verbose) message( "##########################")
         
     }
-    
+    if(iter == max_iter){
+        message('[!] BEEM did not converge within the specified number of iterations.')
+    }
+    mse.traj[1:warmup_iter] <- Inf
     return(list(
         final.params=mdsine,
         trace.biomass=biomass.traj,
@@ -602,7 +622,6 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         trace.mse.weighted=mse.weighted.traj,
         min.iter=min_iter,
         max.iter=max_iter,
-        epsilon=epsilon,
         refSp=refSp
         ) )
 }
@@ -667,24 +686,15 @@ inspectEM <- function(beem.obj){
         warning('You have less than 7 species. The estimation of parameters might be inaccurate.')
     }
     trace.mse.weighted <- beem.obj$trace.mse.weighted
-    idx <- max(round(length(trace.mse.weighted)/25), 2):length(trace.mse.weighted)
+    idx <- is.finite(beem.obj$trace.mse)
     if(min(trace.mse.weighted) > trace.mse.weighted[2]){
         warning('Optimization failed.') ## worse fit than CSS (first iteration)
         return(NA)
     }
-    if( sum(trace.mse.weighted[idx] > 1e-5)/length(idx) > 0.3 ){
-        warning('Poor fitting detected.') ## too many iterations with large MSE
+    if( any(trace.mse.weighted[idx] > 1e-5) ){
+        warning('Poor fitting detected.') ## iterations with large MSE
         return(NA)
     }
-    if( cor(trace.mse.weighted[idx], 1:length(idx), method='spearman') < -0.5){
-        ## dicreasing error
-        return(0)
-    }
-    fit <- lm(trace.mse.weighted[idx]/mad(trace.mse.weighted[idx]) ~ idx)
-    if(sqrt(median(resid(fit)^2)) > 0.5 && coef(fit)[2]>0 ) {
-        warning('Poor convergence detected.') ## not smooth enough
-        return(NA)
-    } 
     return(0)
 }
 
@@ -694,18 +704,21 @@ inspectEM <- function(beem.obj){
 #' @description Inferring biomass from BEEM results
 #' @param beem.obj BEEM output list
 #' @param forceSkipWarning Use with caution! Force to skip model fit check.
+#' @param dev tolerance in mse to select iterations for estimating parameters (default: 0.05)
 #' @export
-biomassFromEM <- function(beem.obj, forceSkipWarning=FALSE){
-    if(is.na( inspectEM(beem.obj) ) & !forceSkipWarning){
-        message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
-        return(NA)
-    } 
+biomassFromEM <- function(beem.obj, forceSkipWarning=FALSE, dev=0.05){
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
-    em.idx <- which((trace.mse-min.mse) < beem.obj$epsilon*min.mse)
-    biomass <- apply(data.frame(beem.obj$trace.biomass[,em.idx]),1,median)
+    em.idx <- which((trace.mse-min.mse) < dev*min.mse)
+    
+    if(length(em.idx)==1) {
+        biomass <- beem.obj$trace.biomass[,em.idx]
+    }else{
+        biomass <- apply(beem.obj$trace.biomass[,em.idx],1,median)
+    }
     biomass
 }
+
 
 #' @title paramFromEM
 #' @description Inferring parameters from BEEM results
@@ -717,8 +730,10 @@ biomassFromEM <- function(beem.obj, forceSkipWarning=FALSE){
 #' @param ncpu maximal number of CPUs used (default:4)
 #' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
 #' @param forceSkipWarning Use with caution! Force to skip model fit check.
+#' @param dev tolerance in mse to select iterations for estimating parameters (default: 0.05)
 #' @export
-paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, forceBreak=NULL, ncpu=4, enforceLogistic=FALSE, forceSkipWarning=FALSE){
+paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, 
+                        forceBreak=NULL, ncpu=4, enforceLogistic=FALSE, dev=0.05, forceSkipWarning=FALSE){
     if(is.na( inspectEM(beem.obj) ) & !forceSkipWarning){
         message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
         return(NA)
@@ -726,8 +741,7 @@ paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, forceBreak=NULL
     registerDoMC(ncpu)
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
-    em.idx <- which((trace.mse-min.mse) < beem.obj$epsilon*min.mse)
-    ##em.idx <- which((trace.mse-min.mse) < 0.01*min.mse)
+    em.idx <- which((trace.mse-min.mse) < dev*min.mse)
 
     refSp <- beem.obj$refSp
     if(length(em.idx)==1) {
