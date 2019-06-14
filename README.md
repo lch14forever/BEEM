@@ -18,7 +18,7 @@ BEEM was written in R (>=3.3.1) and requires the following packages:
 You can install BEEM as an R package using devtools
 
 ```r
-devtools::install_github('lch14forever/beem', ref='package')
+devtools::install_github('csb5/beem')
 ```
 
 ## Input data
