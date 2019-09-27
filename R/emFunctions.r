@@ -707,6 +707,10 @@ inspectEM <- function(beem.obj){
 #' @param dev tolerance in mse to select iterations for estimating parameters (default: 0.05)
 #' @export
 biomassFromEM <- function(beem.obj, forceSkipWarning=FALSE, dev=0.05){
+    if(is.na( inspectEM(beem.obj) ) & !forceSkipWarning){
+        message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
+        return(NA)
+    } 
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
     em.idx <- which((trace.mse-min.mse) < dev*min.mse)
