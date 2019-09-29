@@ -34,10 +34,10 @@ smooth.deri.glkerns <- function(x, t, deriv=0, t.out=t, smethod='glkerns', ...){
 #' @param deriv order of derivative to calculate
 #' @param t.out time stamp of output (default: to be the same as input)
 #' @param method spline fitting method used for "pspline" (default: 3)
-#' @param norder oder of spline basis (default: 3)
+#' @param norder oder of spline basis (default: 2)
 #' @import pspline
 #' @return a vector of fitted value after smoothing
-smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...){
+smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=2, ...){
     ## initial fit to find outliers
     fit.tmp <- c(smooth.Pspline(t, x,method=smethod, norder=norder, spar=1e10)$ysmth)
     res <- abs(x - fit.tmp)
@@ -304,6 +304,7 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
     dat.norm.scale <- data.frame(matrix(NA, nrow(counts),0))
     isOutlier <- NULL
     dalr_x_dt <- data.frame(matrix(NA, nrow(counts)-1,0))    
+    rel_diff <- data.frame(matrix(NA, nrow(counts),0))
     for(i in unique(metadata$subjectID)){
         sel <- metadata$subjectID==i
         dat.tmp.norm <- dat.norm[, sel]
@@ -331,9 +332,8 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
         dat.tmp.norm <- dat.tmp.norm * scaling 
         dat.norm.scale <- cbind(dat.norm.scale, dat.tmp.norm)
         ## find relative change in relative abundances
-        dat.tss.tmp <- dat.tss[,sel]
         rel_diff <- cbind(rel_diff,
-                          cbind(Inf, t(diff(t(dat.tss.tmp))))/(dat.tss.tmp))
+                          cbind(Inf, t(diff(t(dat.tmp.norm))))/(dat.tmp.norm))
     }
     if(finite_diff){
         ## detect outliers for all gradients
@@ -509,19 +509,19 @@ suggestRefs <- function(dat, meta){
 #' @param dev deviation (dev * mad) from the median to be considered as outliers (default: 5)
 #' @param verbose print more information (default: TRUE)
 #' @param refSp reference OTU for addative log ratio transformation (default: selected by BEEM)
-#' @param warmup_iter number of iterations to skip for estimating parameters (default: 50)
+#' @param warmup_iter number of iterations to skip for estimating parameters (default: min_iter/2)
 #' @param max_iter maximal number of iterations for the EM algorithm (default: 100)
-#' @param min_iter minimal number of iterations for the EM algorithm (default: warmup_iter/2)
+#' @param min_iter minimal number of iterations for the EM algorithm (default: 30)
 #' @param converge_thres tolerance of change in mse to determine convergence (default: 1e-3)
-#' @param ncpu maximal number of CPUs used (default:10)
+#' @param ncpu maximal number of CPUs used (default:2)
 #' @param seed seed used in BLASSO (default:NULL)
 #' @param scaling median total biomass to scale all biomass data (default:1000)
 #' @export
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                dev=5, verbose=TRUE,
                refSp = NULL,
-               warmup_iter = 50, min_iter = warmup_iter/2,  max_iter = 100, converge_thres=0.001, 
-               ncpu=10, seed=NULL, scaling=1000){
+               warmup_iter = min_iter/2, min_iter = 30,  max_iter = 100, converge_thres=0.001, 
+               ncpu=2, seed=NULL, scaling=1000){
 
     if(nrow(dat) < 7){
         message("[!]: There are less than 7 species. This might results in an inaccurate model.")

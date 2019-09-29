@@ -4,14 +4,12 @@
 \alias{suggestRefs}
 \title{suggestRefs}
 \usage{
-suggestRefs(dat, meta, scaling = 1)
+suggestRefs(dat, meta)
 }
 \arguments{
 \item{dat}{input data in relative abundances}
 
 \item{meta}{metadata following MDSINE's metadata format}
-
-\item{scaling}{library size to scale the data to proportions}
 }
 \description{
 Function to select references for ALR

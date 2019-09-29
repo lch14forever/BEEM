@@ -5,7 +5,7 @@
 \title{paramFromEM}
 \usage{
 paramFromEM(beem.obj, counts, metadata, sparse = TRUE,
-  forceBreak = NULL, ncpu = 4, enforceLogistic = FALSE,
+  forceBreak = NULL, ncpu = 4, enforceLogistic = FALSE, dev = 0.05,
   forceSkipWarning = FALSE)
 }
 \arguments{
@@ -22,6 +22,8 @@ paramFromEM(beem.obj, counts, metadata, sparse = TRUE,
 \item{ncpu}{maximal number of CPUs used (default:4)}
 
 \item{enforceLogistic}{re-estimate the self-interaction parameters (enforce to negative values)}
+
+\item{dev}{tolerance in mse to select iterations for estimating parameters (default: 0.05)}
 
 \item{forceSkipWarning}{Use with caution! Force to skip model fit check.}
 }

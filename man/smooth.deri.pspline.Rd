@@ -5,7 +5,7 @@
 \title{smooth.deri.pspline}
 \usage{
 smooth.deri.pspline(x, t, deriv = 0, t.out = t, smethod = 3,
-  norder = 3, ...)
+  norder = 2, ...)
 }
 \arguments{
 \item{x}{vector of data}
@@ -16,7 +16,7 @@ smooth.deri.pspline(x, t, deriv = 0, t.out = t, smethod = 3,
 
 \item{t.out}{time stamp of output (default: to be the same as input)}
 
-\item{norder}{oder of spline basis (default: 3)}
+\item{norder}{oder of spline basis (default: 2)}
 
 \item{method}{spline fitting method used for "pspline" (default: 3)}
 }

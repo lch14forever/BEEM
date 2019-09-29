@@ -4,7 +4,7 @@
 \alias{testStop}
 \title{testStop}
 \usage{
-testStop(x, epsilon = 0.1)
+testStop(x, epsilon = 0.002, win = 3)
 }
 \arguments{
 \item{x}{a vector of mse trace}

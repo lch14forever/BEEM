@@ -5,8 +5,9 @@
 \title{EM}
 \usage{
 EM(dat, meta, forceBreak = NULL, useSpline = TRUE, dev = 5,
-  verbose = TRUE, refSp = NULL, min_iter = 30, max_iter = 100,
-  epsilon = 0.01, ncpu = 10, seed = NULL, scaling = 1000)
+  verbose = TRUE, refSp = NULL, warmup_iter = min_iter/2,
+  min_iter = 30, max_iter = 100, converge_thres = 0.001, ncpu = 2,
+  seed = NULL, scaling = 1000)
 }
 \arguments{
 \item{dat}{input data following MDSINE's OTU table (i.e. variables in rows and samples in columns)}
@@ -23,13 +24,15 @@ EM(dat, meta, forceBreak = NULL, useSpline = TRUE, dev = 5,
 
 \item{refSp}{reference OTU for addative log ratio transformation (default: selected by BEEM)}
 
+\item{warmup_iter}{number of iterations to skip for estimating parameters (default: min_iter/2)}
+
 \item{min_iter}{minimal number of iterations for the EM algorithm (default: 30)}
 
 \item{max_iter}{maximal number of iterations for the EM algorithm (default: 100)}
 
-\item{epsilon}{tolerance threshold to early stop the iterations (default: 0.01)}
+\item{converge_thres}{tolerance of change in mse to determine convergence (default: 1e-3)}
 
-\item{ncpu}{maximal number of CPUs used (default:10)}
+\item{ncpu}{maximal number of CPUs used (default:2)}
 
 \item{seed}{seed used in BLASSO (default:NULL)}
 
