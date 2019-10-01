@@ -2,9 +2,9 @@
 
 <img src="logo.png" height="200" align="right" />
 
-BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used [generalized Lotka-Volterra modelling](https://en.wikipedia.org/wiki/Generalized_Lotka–Volterra_equation) (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) from **longitudinal** data and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing.
+BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used [generalized Lotka-Volterra modelling](https://en.wikipedia.org/wiki/Generalized_Lotka–Volterra_equation) (gLVM) framework. BEEM uses an iterative EM algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) from **longitudinal** data and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing.
 
-Note: BEEM stands for **B**iomass **E**stimation and model inference with an **E**xpectation **M**aximization-like algorithm. We have now extended the BEEM framework to be able to work with cross-sectional data (BEEM-static, check out our R package [here](https://github.com/CSB5/BEEM-static)).
+Note: BEEM stands for **B**iomass **E**stimation and model inference with an **E**xpectation **M**aximization algorithm. We have now extended the BEEM framework to be able to work with cross-sectional data (BEEM-static, check out our R package [here](https://github.com/CSB5/BEEM-static)).
 
 ## Dependencies
 
@@ -87,7 +87,7 @@ BEEM estimated parameters is an R `data.frame` (a table) with the following colu
 The commands for reproducing the analysis reportd in the manuscript are presented as jupyter notebooks: (1) [notebook on a demo of the gLVM simulation](https://github.com/CSB5/BEEM/blob/master/vignettes/simulation.ipynb), (2) [notebook for Props et. al.](https://github.com/CSB5/BEEM/blob/master/vignettes/props_et_al.ipynb) and (3) [notebook for Gibbons et. al.](https://github.com/CSB5/BEEM/blob/master/vignettes/gibbons_et_al.ipynb).
 
 ## Citation
-C Li, L Tucker-Kellogg & N Nagarajan. (2018). An expectation-maximization-like algorithm enables accurate ecological modeling using longitudinal metagenome sequencing data [*BioRxiv*](https://www.biorxiv.org/content/early/2018/07/17/288803).
+C Li, K R Chng, J S Kwah, T V Av-Shalom, L Tucker-Kellogg & N Nagarajan. (2019). An expectation-maximization algorithm enables accurate ecological modeling using longitudinal metagenome sequencing data. [*Microbiome*](https://rdcu.be/bPl3T).
 
 ## Contact
 Please direct any questions or feedback to Chenhao Li (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
