@@ -34,10 +34,10 @@ smooth.deri.glkerns <- function(x, t, deriv=0, t.out=t, smethod='glkerns', ...){
 #' @param deriv order of derivative to calculate
 #' @param t.out time stamp of output (default: to be the same as input)
 #' @param method spline fitting method used for "pspline" (default: 3)
-#' @param norder oder of spline basis (default: 2)
+#' @param norder order of spline basis (default: 3)
 #' @import pspline
 #' @return a vector of fitted value after smoothing
-smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=2, ...){
+smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...){
     ## initial fit to find outliers
     fit.tmp <- c(smooth.Pspline(t, x,method=smethod, norder=norder, spar=1e10)$ysmth)
     res <- abs(x - fit.tmp)
@@ -274,7 +274,8 @@ cumSumScale <- function(m, p=0.5){
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param finite_diff use finite difference method to calculate gradients (default FALSE)
 #' @param ncpu number of CPUs (default: 10)
-preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data=TRUE, ncpu=10, finite_diff=FALSE, forceBreak=NULL){    
+#' @param norder order of spline basis (default: 3)
+preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data=TRUE, ncpu=10, norder=3, finite_diff=FALSE, forceBreak=NULL){    
     ## get perturbation identifier matrix (mu)
     if(any(metadata[,5]!=0)){
         mu <- model.matrix(~factor(metadata[,5]))[,-1]
@@ -291,7 +292,7 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
             brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
                                  which(forceBreak[sel] == 1))))
             SmoothGradient(dat.alr[sel, ], metadata[sel, 4], breaks=brk,
-                           deriv=0, ncpu=10, method='pspline',smethod=3) 
+                           deriv=0, ncpu=10, method='pspline',smethod=3, norder=norder) 
         }
         dat.alr.smoothed[is.na(dat.alr)] <- NA
         ## transform back
@@ -317,7 +318,7 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
         }else{
             dalr_x_dt.tmp <- t(SmoothGradient(alr.tmp[,-rsp],
                                               metadata[sel, 4], breaks=brk,
-                                              method = "pspline", ncpu=10, smethod=3))
+                                              method = "pspline", ncpu=10, smethod=3, norder=norder))
         }
         dalr_x_dt <- cbind(dalr_x_dt, dalr_x_dt.tmp)
         ## detect outliers
@@ -383,10 +384,11 @@ postProcessGamma <- function(alpha, gamma, thre=1e-2){
 #' @param rmSp Speices removed for alr tranformation
 #' @param params list(alpha=, beta=) estimated with BLASSO
 #' @param ncpu number of CPUs used (default: 10)
+#' @param norder order of spline basis (default: 3)
 #' @param scale scale the median of all samples
 #' @param smooth smooth the biomass after normalization
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
-NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, scale=NA, smooth=FALSE, forceBreak=NULL){
+NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, norder=3, scale=NA, smooth=FALSE, forceBreak=NULL){
     registerDoMC(ncpu)
     tss[is.na(tss)] <- 0    
     if(is.null(params$gamma)){
@@ -438,7 +440,7 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, sc
             brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
                                  which(forceBreak[sel] == 1))))            
             tmp <- abs(SmoothGradient(matrix(w[sel], ncol=1), metadata[sel, 4],
-                               breaks = brk, deriv=0, smethod=1))            
+                               breaks = brk, deriv=0, smethod=1, norder=norder))            
         }
     }
     
@@ -516,12 +518,13 @@ suggestRefs <- function(dat, meta){
 #' @param ncpu maximal number of CPUs used (default:2)
 #' @param seed seed used in BLASSO (default:NULL)
 #' @param scaling median total biomass to scale all biomass data (default:1000)
+#' @param norder order of spline basis (default: 3)
 #' @export
 EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                dev=5, verbose=TRUE,
                refSp = NULL,
                warmup_iter = min_iter/2, min_iter = 30,  max_iter = 100, converge_thres=0.001, 
-               ncpu=2, seed=NULL, scaling=1000){
+               ncpu=2, seed=NULL, scaling=1000, norder=3){
 
     if(nrow(dat) < 7){
         message("[!]: There are less than 7 species. This might results in an inaccurate model.")
@@ -622,6 +625,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
         trace.mse.weighted=mse.weighted.traj,
         min.iter=min_iter,
         max.iter=max_iter,
+        epsilon=converge_thres,
         refSp=refSp
         ) )
 }
@@ -635,10 +639,11 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
 #' @param ncpu maximal number of CPUs used (default:4)
+#' @param norder order of spline basis (default: 3)
 #' @param infer_flag run inference (default:TRUE)
 #' @export
 param.infer <- function(dat, metadata, biomass,
-                        forceBreak=NULL, dev=Inf, ncpu=4, infer_flag=TRUE){
+                        forceBreak=NULL, dev=Inf, ncpu=4, norder=3, infer_flag=TRUE){
     registerDoMC(ncpu)
     log.transform <- function(x){
         tmp <- log(x)
@@ -653,7 +658,7 @@ param.infer <- function(dat, metadata, biomass,
         brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
                              which(forceBreak[sel] == 1))))            
         SmoothGradient(log.transform(counts.tss)[sel, ], metadata[sel, 4],
-                       breaks=brk,method='pspline',smethod=3, deriv=1, ncpu=ncpu)
+                       breaks=brk,method='pspline',smethod=3, deriv=1, ncpu=ncpu, norder=norder)
     }    
     ## smooth to calculate gradient for log biomass
     dlnm_dt <- foreach(i=unique(metadata$subjectID), .combine='c') %do%{
@@ -661,7 +666,7 @@ param.infer <- function(dat, metadata, biomass,
         brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
                              which(forceBreak[sel] == 1))))            
         SmoothGradient(matrix(log.transform(biomass)[sel],ncol=1), metadata[sel, 4],
-                       breaks=brk,method='pspline',smethod=3, deriv=1, ncpu=ncpu)
+                       breaks=brk,method='pspline',smethod=3, deriv=1, ncpu=ncpu, norder=norder)
     }
     Ys <- dlnx_tilde_dt + dlnm_dt   
     Xs <- exp(sweep(log.transform(counts.tss), 1, log.transform(biomass), '+'))
