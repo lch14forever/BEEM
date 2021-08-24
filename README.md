@@ -90,4 +90,4 @@ The commands for reproducing the analysis reportd in the manuscript are presente
 C Li, K R Chng, J S Kwah, T V Av-Shalom, L Tucker-Kellogg & N Nagarajan. (2019). An expectation-maximization algorithm enables accurate ecological modeling using longitudinal metagenome sequencing data. [*Microbiome*](https://rdcu.be/bPl3T).
 
 ## Contact
-Please direct any questions or feedback to Chenhao Li (lich@gis.a-star.edu.sg) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
+Please direct any questions or feedback to Chenhao Li (cli40@mgh.harvard.edu) and Niranjan Nagarajan (nagarajann@gis.a-star.edu.sg).
