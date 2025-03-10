@@ -4,9 +4,18 @@
 \alias{preProcess}
 \title{preProcess}
 \usage{
-preProcess(counts, metadata, rsp, dev = 100, scaling = 5000,
-  smooth_data = TRUE, ncpu = 10, finite_diff = FALSE,
-  forceBreak = NULL)
+preProcess(
+  counts,
+  metadata,
+  rsp,
+  dev = 100,
+  scaling = 5000,
+  smooth_data = TRUE,
+  ncpu = 10,
+  norder = 3,
+  finite_diff = FALSE,
+  forceBreak = NULL
+)
 }
 \arguments{
 \item{counts}{input data following MDSINE's OTU table (i.e. variables in rows and samples in columns)}
@@ -22,6 +31,8 @@ preProcess(counts, metadata, rsp, dev = 100, scaling = 5000,
 \item{smooth_data}{data will be smoothed before initial normalization (default: TRUE)}
 
 \item{ncpu}{number of CPUs (default: 10)}
+
+\item{norder}{order of spline basis (default: 3)}
 
 \item{finite_diff}{use finite difference method to calculate gradients (default FALSE)}
 

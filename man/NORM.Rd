@@ -4,8 +4,19 @@
 \alias{NORM}
 \title{NORM}
 \usage{
-NORM(tss, gradients, perturbInd, metadata, rmSp, params, ncpu = 10,
-  scale = NA, smooth = FALSE, forceBreak = NULL)
+NORM(
+  tss,
+  gradients,
+  perturbInd,
+  metadata,
+  rmSp,
+  params,
+  ncpu = 10,
+  norder = 3,
+  scale = NA,
+  smooth = FALSE,
+  forceBreak = NULL
+)
 }
 \arguments{
 \item{tss}{matrix of relative abundances (proportions), variables in rows and sample in columns}
@@ -19,6 +30,8 @@ NORM(tss, gradients, perturbInd, metadata, rmSp, params, ncpu = 10,
 \item{params}{list(alpha=, beta=) estimated with BLASSO}
 
 \item{ncpu}{number of CPUs used (default: 10)}
+
+\item{norder}{order of spline basis (default: 3)}
 
 \item{scale}{scale the median of all samples}
 

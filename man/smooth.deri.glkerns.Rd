@@ -4,8 +4,7 @@
 \alias{smooth.deri.glkerns}
 \title{smooth.deri.glkerns}
 \usage{
-smooth.deri.glkerns(x, t, deriv = 0, t.out = t, smethod = "glkerns",
-  ...)
+smooth.deri.glkerns(x, t, deriv = 0, t.out = t, smethod = "glkerns", ...)
 }
 \arguments{
 \item{x}{vector of data}

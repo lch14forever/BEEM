@@ -4,10 +4,23 @@
 \alias{EM}
 \title{EM}
 \usage{
-EM(dat, meta, forceBreak = NULL, useSpline = TRUE, dev = 5,
-  verbose = TRUE, refSp = NULL, warmup_iter = min_iter/2,
-  min_iter = 30, max_iter = 100, converge_thres = 0.001, ncpu = 2,
-  seed = NULL, scaling = 1000)
+EM(
+  dat,
+  meta,
+  forceBreak = NULL,
+  useSpline = TRUE,
+  dev = 5,
+  verbose = TRUE,
+  refSp = NULL,
+  warmup_iter = min_iter/2,
+  min_iter = 30,
+  max_iter = 100,
+  converge_thres = 0.001,
+  ncpu = 2,
+  seed = NULL,
+  scaling = 1000,
+  norder = 3
+)
 }
 \arguments{
 \item{dat}{input data following MDSINE's OTU table (i.e. variables in rows and samples in columns)}
@@ -37,6 +50,8 @@ EM(dat, meta, forceBreak = NULL, useSpline = TRUE, dev = 5,
 \item{seed}{seed used in BLASSO (default:NULL)}
 
 \item{scaling}{median total biomass to scale all biomass data (default:1000)}
+
+\item{norder}{order of spline basis (default: 3)}
 }
 \description{
 Function to estimate biomass and parameters simultaneously

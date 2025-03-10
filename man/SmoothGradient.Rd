@@ -4,8 +4,16 @@
 \alias{SmoothGradient}
 \title{SmoothGradient}
 \usage{
-SmoothGradient(m, t, breaks, t.out = t, deriv = 1, ncpu = 10,
-  method = "pspline", ...)
+SmoothGradient(
+  m,
+  t,
+  breaks,
+  t.out = t,
+  deriv = 1,
+  ncpu = 10,
+  method = "pspline",
+  ...
+)
 }
 \arguments{
 \item{m}{a matrix of data (variable in columns and time in rows)}

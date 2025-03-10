@@ -6,8 +6,10 @@ Maintainer: Chenhao Li <lich@gis.a-star.edu.sg>
 Description: BEEM stands for Biomass Estimation and model inference with an Expectation Maximization-like algorithm. BEEM is an approach to infer models for microbial community dynamics based on metagenomic sequencing data (16S or shotgun-metagenomics). It is based on the commonly used generalized Lotka-Volterra modelling (gLVM) framework. BEEM uses an iterative EM-like algorithm to simultaneously infer scaling factors (microbial biomass) and model parameters (microbial growth rate and interaction terms) from longitudinal data and can thus work directly with the relative abundance values that are obtained with metagenomic sequencing.
 Depends: R (>= 3.3.1),
     foreach,
-    doMC
+    pspline,
+    monomvn,
+    doParallel
 License: MIT
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.2.3

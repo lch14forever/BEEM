@@ -4,9 +4,17 @@
 \alias{paramFromEM}
 \title{paramFromEM}
 \usage{
-paramFromEM(beem.obj, counts, metadata, sparse = TRUE,
-  forceBreak = NULL, ncpu = 4, enforceLogistic = FALSE, dev = 0.05,
-  forceSkipWarning = FALSE)
+paramFromEM(
+  beem.obj,
+  counts,
+  metadata,
+  sparse = TRUE,
+  forceBreak = NULL,
+  ncpu = 4,
+  enforceLogistic = FALSE,
+  dev = 0.05,
+  forceSkipWarning = FALSE
+)
 }
 \arguments{
 \item{beem.obj}{BEEM output list}

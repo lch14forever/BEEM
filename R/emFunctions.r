@@ -61,7 +61,7 @@ smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...
 #' @return a matrix of gradients calculated (deriv=1), a matrix of smoothed data (deriv=0)
 SmoothGradient <- function(m, t, breaks, t.out = t, deriv=1, ncpu=10, method='pspline', ...){
     m[is.na(m)] <- 0
-    registerDoMC(ncpu) 
+    registerDoParallel(ncpu) 
     p <- ncol(m)
     if(is.null(ncol(t))){
         t.mat <- matrix(rep(t, p), ncol=p)
@@ -196,7 +196,7 @@ formatOutput <- function(alpha, beta, gamma=NULL, vnames){
 #' @param seed the seed
 #' @return a list with alpha, beta, and output in MDSINE's format
 BLASSO <- function(X, P, Ys, Fs, ncpu, rmSp, vnames, seed=NULL){
-    registerDoMC(ncpu)    
+    registerDoParallel(ncpu)    
     p <- ncol(X)
     nPerturbs <- ncol(P)
     X[is.na(X)] <- 0
@@ -389,7 +389,7 @@ postProcessGamma <- function(alpha, gamma, thre=1e-2){
 #' @param smooth smooth the biomass after normalization
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, norder=3, scale=NA, smooth=FALSE, forceBreak=NULL){
-    registerDoMC(ncpu)
+    registerDoParallel(ncpu)
     tss[is.na(tss)] <- 0    
     if(is.null(params$gamma)){
         perturbOffset <- 0
@@ -644,7 +644,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
 #' @export
 param.infer <- function(dat, metadata, biomass,
                         forceBreak=NULL, dev=Inf, ncpu=4, norder=3, infer_flag=TRUE){
-    registerDoMC(ncpu)
+    registerDoParallel(ncpu)
     log.transform <- function(x){
         tmp <- log(x)
         tmp[!is.finite(tmp)] <- 0
@@ -747,7 +747,7 @@ paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE,
         message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
         return(NA)
     } 
-    registerDoMC(ncpu)
+    registerDoParallel(ncpu)
     trace.mse <- beem.obj$trace.mse
     min.mse <- min(trace.mse)
     em.idx <- which((trace.mse-min.mse) < dev*min.mse)

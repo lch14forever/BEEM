@@ -4,8 +4,16 @@
 \alias{param.infer}
 \title{param.infer}
 \usage{
-param.infer(dat, metadata, biomass, forceBreak = NULL, dev = Inf,
-  ncpu = 4, infer_flag = TRUE)
+param.infer(
+  dat,
+  metadata,
+  biomass,
+  forceBreak = NULL,
+  dev = Inf,
+  ncpu = 4,
+  norder = 3,
+  infer_flag = TRUE
+)
 }
 \arguments{
 \item{dat}{input data following MDSINE's OTU table}
@@ -19,6 +27,8 @@ param.infer(dat, metadata, biomass, forceBreak = NULL, dev = Inf,
 \item{dev}{deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)}
 
 \item{ncpu}{maximal number of CPUs used (default:4)}
+
+\item{norder}{order of spline basis (default: 3)}
 
 \item{infer_flag}{run inference (default:TRUE)}
 }
