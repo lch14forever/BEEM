@@ -56,10 +56,10 @@ smooth.deri.pspline <- function(x, t, deriv=0, t.out=t, smethod=3, norder=3, ...
 #' @param breaks break points to re-smooth the data
 #' @param t.out time stamps of output (default: to be the same as input)
 #' @param deriv order of derivative to calculate
-#' @param ncpu number of cpus (default: 10)
+#' @param ncpu number of cpus (default: 1)
 #' @param method smoothing method used to calculate gradients (default: pspline)
 #' @return a matrix of gradients calculated (deriv=1), a matrix of smoothed data (deriv=0)
-SmoothGradient <- function(m, t, breaks, t.out = t, deriv=1, ncpu=10, method='pspline', ...){
+SmoothGradient <- function(m, t, breaks, t.out = t, deriv=1, ncpu=1, method='pspline', ...){
     m[is.na(m)] <- 0
     registerDoParallel(ncpu) 
     p <- ncol(m)
@@ -273,9 +273,9 @@ cumSumScale <- function(m, p=0.5){
 #' @param smooth_data data will be smoothed before initial normalization (default: TRUE)
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param finite_diff use finite difference method to calculate gradients (default FALSE)
-#' @param ncpu number of CPUs (default: 10)
+#' @param ncpu number of CPUs (default: 11)
 #' @param norder order of spline basis (default: 3)
-preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data=TRUE, ncpu=10, norder=3, finite_diff=FALSE, forceBreak=NULL){    
+preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data=TRUE, ncpu=1, norder=3, finite_diff=FALSE, forceBreak=NULL){    
     ## get perturbation identifier matrix (mu)
     if(any(metadata[,5]!=0)){
         mu <- model.matrix(~factor(metadata[,5]))[,-1]
@@ -292,7 +292,7 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
             brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
                                  which(forceBreak[sel] == 1))))
             SmoothGradient(dat.alr[sel, ], metadata[sel, 4], breaks=brk,
-                           deriv=0, ncpu=10, method='pspline',smethod=3, norder=norder) 
+                           deriv=0, ncpu=ncpu, method='pspline',smethod=3, norder=norder) 
         }
         dat.alr.smoothed[is.na(dat.alr)] <- NA
         ## transform back
@@ -318,7 +318,7 @@ preProcess <- function(counts, metadata, rsp, dev=100, scaling=5000, smooth_data
         }else{
             dalr_x_dt.tmp <- t(SmoothGradient(alr.tmp[,-rsp],
                                               metadata[sel, 4], breaks=brk,
-                                              method = "pspline", ncpu=10, smethod=3, norder=norder))
+                                              method = "pspline", ncpu=ncpu, smethod=3, norder=norder))
         }
         dalr_x_dt <- cbind(dalr_x_dt, dalr_x_dt.tmp)
         ## detect outliers
@@ -383,12 +383,12 @@ postProcessGamma <- function(alpha, gamma, thre=1e-2){
 #' @param meta metadata
 #' @param rmSp Speices removed for alr tranformation
 #' @param params list(alpha=, beta=) estimated with BLASSO
-#' @param ncpu number of CPUs used (default: 10)
+#' @param ncpu number of CPUs used (default: 1)
 #' @param norder order of spline basis (default: 3)
 #' @param scale scale the median of all samples
 #' @param smooth smooth the biomass after normalization
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
-NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, norder=3, scale=NA, smooth=FALSE, forceBreak=NULL){
+NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=1, norder=3, scale=NA, smooth=FALSE, forceBreak=NULL){
     registerDoParallel(ncpu)
     tss[is.na(tss)] <- 0    
     if(is.null(params$gamma)){
@@ -439,7 +439,7 @@ NORM <- function(tss, gradients, perturbInd, metadata, rmSp, params, ncpu=10, no
             sel <- metadata$subjectID==i
             brk <- unique(sort(c(which(diff(metadata[sel,5]) !=0) + 1,
                                  which(forceBreak[sel] == 1))))            
-            tmp <- abs(SmoothGradient(matrix(w[sel], ncol=1), metadata[sel, 4],
+            tmp <- abs(SmoothGradient(matrix(w[sel], ncol=1), metadata[sel, 4], ncpu = ncpu,
                                breaks = brk, deriv=0, smethod=1, norder=norder))            
         }
     }
@@ -515,7 +515,7 @@ suggestRefs <- function(dat, meta){
 #' @param max_iter maximal number of iterations for the EM algorithm (default: 100)
 #' @param min_iter minimal number of iterations for the EM algorithm (default: 30)
 #' @param converge_thres tolerance of change in mse to determine convergence (default: 1e-3)
-#' @param ncpu maximal number of CPUs used (default:2)
+#' @param ncpu maximal number of CPUs used (default:1)
 #' @param seed seed used in BLASSO (default:NULL)
 #' @param scaling median total biomass to scale all biomass data (default:1000)
 #' @param norder order of spline basis (default: 3)
@@ -524,7 +524,7 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
                dev=5, verbose=TRUE,
                refSp = NULL,
                warmup_iter = min_iter/2, min_iter = 30,  max_iter = 100, converge_thres=0.001, 
-               ncpu=2, seed=NULL, scaling=1000, norder=3){
+               ncpu=1, seed=NULL, scaling=1000, norder=3){
 
     if(nrow(dat) < 7){
         message("[!]: There are less than 7 species. This might results in an inaccurate model.")
@@ -638,12 +638,12 @@ EM <- function(dat, meta, forceBreak=NULL, useSpline=TRUE,
 #' @param biomass biomass data following MDSINE's biomass data format
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
 #' @param dev deviation (dev * mad) from the median to be considered as outliers (default:Inf, no filtering)
-#' @param ncpu maximal number of CPUs used (default:4)
+#' @param ncpu maximal number of CPUs used (default:1)
 #' @param norder order of spline basis (default: 3)
 #' @param infer_flag run inference (default:TRUE)
 #' @export
 param.infer <- function(dat, metadata, biomass,
-                        forceBreak=NULL, dev=Inf, ncpu=4, norder=3, infer_flag=TRUE){
+                        forceBreak=NULL, dev=Inf, ncpu=1, norder=3, infer_flag=TRUE){
     registerDoParallel(ncpu)
     log.transform <- function(x){
         tmp <- log(x)
@@ -736,13 +736,13 @@ biomassFromEM <- function(beem.obj, forceSkipWarning=FALSE, dev=0.05){
 #' @param metadata metadata following MDSINE's metadata format
 #' @param sparse use the sparse mode to estimate the parameters (default: TRUE)
 #' @param forceBreak force to break the trajectory to handle pulsed perturbation (or species invasion) (default: NULL)
-#' @param ncpu maximal number of CPUs used (default:4)
+#' @param ncpu maximal number of CPUs used (default:1)
 #' @param enforceLogistic re-estimate the self-interaction parameters (enforce to negative values)
 #' @param forceSkipWarning Use with caution! Force to skip model fit check.
 #' @param dev tolerance in mse to select iterations for estimating parameters (default: 0.05)
 #' @export
 paramFromEM <- function(beem.obj, counts, metadata, sparse=TRUE, 
-                        forceBreak=NULL, ncpu=4, enforceLogistic=FALSE, dev=0.05, forceSkipWarning=FALSE){
+                        forceBreak=NULL, ncpu=1, enforceLogistic=FALSE, dev=0.05, forceSkipWarning=FALSE){
     if(is.na( inspectEM(beem.obj) ) & !forceSkipWarning){
         message("BEEM failed... Consider increasing the number of samples or reducing the number of species.")
         return(NA)
